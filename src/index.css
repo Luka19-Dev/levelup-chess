@@ -1,0 +1,1470 @@
+@font-face {
+  font-family: 'Noto Sans Georgian';
+  src: url('/fonts/NotoSansGeorgian-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Noto Sans Georgian';
+  src: url('/fonts/NotoSansGeorgian-SemiBold.woff2') format('woff2');
+  font-weight: 600;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Noto Sans Georgian';
+  src: url('/fonts/NotoSansGeorgian-ExtraBold.woff2') format('woff2');
+  font-weight: 800;
+  font-display: swap;
+}
+
+:root {
+  /* lichess's warm neutrals and brown board, LevelUp's blue and gold */
+  --bg: #edebe9;
+  --bg-2: #e2dfdb;
+  --card: #ffffff;
+  --ink: #262421;
+  --muted: #6e6a65;
+  --line: #d6d2cc;
+  --accent: #1d4ed8;
+  --accent-ink: #ffffff;
+  --accent-deep: #1638a0;
+  --link: #1d4ed8;
+  --gold: #d59a1e;
+  --gold-deep: var(--gold-deep);
+  --green: #629924;
+  --bad: #cc3333;
+  --sq-light: #dee3e6;
+  --sq-dark: #8ca2ad;
+  --shadow: 0 6px 18px rgba(30, 25, 20, 0.14);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #161512;
+    --bg-2: #1f1e1b;
+    --card: #262421;
+    --ink: #d9d6d1;
+    --muted: #8f8a84;
+    --line: #3a3733;
+    --accent: #3a6ee8;
+    --accent-ink: #ffffff;
+    --accent-deep: #1f4bb5;
+    --link: #8fb0ff;
+    --gold: #ffcf6b;
+    --gold-deep: #b98a2a;
+    --green: #7fb33c;
+    --bad: #e0504a;
+    --shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+    color-scheme: dark;
+  }
+}
+/* chosen with the header switch; without a choice the system setting above applies */
+:root[data-theme='dark'] {
+  --bg: #161512;
+  --bg-2: #1f1e1b;
+  --card: #262421;
+  --ink: #d9d6d1;
+  --muted: #8f8a84;
+  --line: #3a3733;
+  --accent: #3a6ee8;
+  --accent-ink: #ffffff;
+  --accent-deep: #1f4bb5;
+  --link: #8fb0ff;
+  --gold: #ffcf6b;
+  --gold-deep: #b98a2a;
+  --green: #7fb33c;
+  --bad: #e0504a;
+  --shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+}
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Noto Sans Georgian', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  line-height: 1.5;
+  -webkit-tap-highlight-color: transparent;
+}
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+a {
+  color: var(--link);
+}
+
+.app {
+  /* same geometry as Lerno and lvlup.ge: 90rem cap, 1.5rem gutters, 3rem from 768px */
+  max-width: 90rem;
+  margin: 0 auto;
+  padding: 0 1.5rem 48px;
+}
+@media (min-width: 768px) {
+  .app {
+    padding: 0 3rem 48px;
+  }
+}
+
+/* ---------- header ---------- */
+.top {
+  /* three columns with equal sides, so the page title sits in the true middle
+     whatever the width of the back button on its left */
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 0;
+  min-height: 64px;
+}
+.top > :first-child {
+  justify-self: start;
+}
+.brand {
+  font-weight: 800;
+  font-size: 1.25rem;
+}
+.back {
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-weight: 600;
+}
+.level-title {
+  grid-column: 2;
+  font-size: 1.1rem;
+  margin: 0;
+  text-align: center;
+}
+.icon-btn {
+  grid-column: 3;
+  justify-self: end;
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  width: 40px;
+  height: 40px;
+  font-size: 1.2rem;
+}
+
+/* ---------- home ---------- */
+.hero {
+  text-align: center;
+  padding: 12px 0 8px;
+}
+.hero h1 {
+  font-size: clamp(1.5rem, 6vw, 2rem);
+  font-weight: 800;
+  margin: 0 0 6px;
+}
+.hero p {
+  color: var(--muted);
+  margin: 0;
+}
+
+.sprint-tile {
+  width: 100%;
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  text-align: left;
+  background: var(--accent);
+  color: var(--accent-ink);
+  border: 0;
+  border-radius: 18px;
+  padding: 16px 18px;
+  box-shadow: 0 5px 0 var(--accent-deep);
+}
+.sprint-tile strong {
+  display: block;
+  font-size: 1.1rem;
+}
+.sprint-tile small {
+  opacity: 0.9;
+}
+.sprint-icon {
+  font-size: 2rem;
+}
+.foot {
+  text-align: center;
+  margin-top: 36px;
+  font-size: 0.85rem;
+}
+.muted {
+  color: var(--muted);
+}
+
+/* ---------- level ---------- */
+.level {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+
+/* ---------- board ---------- */
+.play {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  align-items: center;
+}
+/* on a phone the panel dissolves into the column; its top items go above the board */
+.panel {
+  display: contents;
+}
+.panel .sprint-bar {
+  order: -1;
+}
+.board {
+  position: relative;
+  width: min(100%, 64vh, 560px);
+  aspect-ratio: 1;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.board.shake {
+  animation: shake 0.4s;
+}
+@keyframes shake {
+  20%, 60% { transform: translateX(-6px); }
+  40%, 80% { transform: translateX(6px); }
+}
+.sq {
+  position: absolute;
+  width: 12.5%;
+  height: 12.5%;
+}
+.sq.light {
+  background: var(--sq-light);
+}
+.sq.dark {
+  background: var(--sq-dark);
+}
+.sq.last::after,
+.sq.sel::after,
+.sq.hint::after,
+.sq.check::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+.sq.last::after {
+  background: rgba(255, 214, 64, 0.38);
+}
+.sq.sel::after {
+  background: rgba(47, 158, 95, 0.45);
+}
+.sq.hint::after {
+  box-shadow: inset 0 0 0 4px var(--green);
+  animation: pulse 1s infinite;
+}
+.sq.check::after {
+  background: radial-gradient(circle, rgba(230, 30, 50, 0.85) 0%, rgba(230, 30, 50, 0.35) 45%, transparent 72%);
+}
+@keyframes pulse {
+  50% { opacity: 0.35; }
+}
+.coord {
+  position: absolute;
+  font-size: clamp(8px, 1.6vw, 11px);
+  font-weight: 600;
+  font-family: system-ui, sans-serif;
+  pointer-events: none;
+}
+.sq.light .coord {
+  color: var(--sq-dark);
+}
+.sq.dark .coord {
+  color: var(--sq-light);
+}
+.coord.rank {
+  top: 2px;
+  left: 3px;
+}
+.coord.file {
+  bottom: 1px;
+  right: 4px;
+}
+.target {
+  position: absolute;
+  inset: 36%;
+  border-radius: 50%;
+  background: rgba(20, 60, 30, 0.32);
+  z-index: 2;
+  pointer-events: none;
+}
+.target.capture {
+  inset: 2%;
+  background: none;
+  border: 5px solid rgba(20, 60, 30, 0.32);
+}
+.star {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: clamp(22px, 6vw, 40px);
+  color: #ffc21a;
+  text-shadow: 0 2px 0 #b07a00;
+  animation: bob 1.6s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes bob {
+  50% { transform: translateY(-4px) scale(1.06); }
+}
+.pc {
+  position: absolute;
+  width: 12.5%;
+  height: 12.5%;
+  z-index: 3;
+  pointer-events: none;
+}
+.pc.lifted {
+  opacity: 0.3;
+}
+.pc .piece-svg,
+.ghost .piece-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.ghost {
+  position: absolute;
+  z-index: 10;
+  pointer-events: none;
+  transform: scale(1.12);
+  filter: drop-shadow(0 6px 6px rgba(0, 0, 0, 0.3));
+}
+.board.live {
+  cursor: pointer;
+}
+
+/* ---------- messages and buttons ---------- */
+.message {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  min-height: 44px;
+  font-weight: 600;
+  text-align: center;
+}
+.message.wrong,
+.message.failed {
+  color: var(--bad);
+}
+.message.right,
+.message.solved {
+  color: var(--green);
+}
+.turn-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid var(--ink);
+}
+.turn-dot.w {
+  background: #fff;
+}
+.turn-dot.b {
+  background: #111;
+}
+.ghost-btn,
+.primary-btn {
+  border-radius: 999px;
+  padding: 8px 18px;
+  font-weight: 600;
+  border: 2px solid var(--line);
+  background: var(--card);
+}
+.primary-btn {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  box-shadow: 0 4px 0 var(--accent-deep);
+}
+.primary-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 var(--accent-deep);
+}
+
+/* ---------- sprint ---------- */
+.sprint-card {
+  text-align: center;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 28px 20px;
+  margin-top: 20px;
+}
+.sprint-card h2 {
+  margin: 0;
+  font-size: 1.6rem;
+}
+.big-score {
+  font-size: 3.4rem;
+  font-weight: 800;
+  margin: 0;
+  line-height: 1.1;
+}
+.big-score small {
+  display: block;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+.sprint-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: min(100%, 64vh, 560px);
+  font-weight: 800;
+}
+.clock {
+  font-size: 1.4rem;
+  font-variant-numeric: tabular-nums;
+}
+.clock.low {
+  color: var(--bad);
+}
+.score {
+  font-size: 1.8rem;
+  color: var(--green);
+}
+.life {
+  color: var(--bad);
+  font-size: 1.4rem;
+  margin-left: 2px;
+}
+.life.lost {
+  color: var(--line);
+}
+
+/* ---------- overlays ---------- */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 12, 4, 0.5);
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  z-index: 50;
+}
+.card {
+  background: var(--card);
+  border-radius: 22px;
+  padding: 24px 20px;
+  width: min(100%, 400px);
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+.card h2 {
+  margin: 0 0 8px;
+}
+
+.row {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 14px;
+}
+.settings {
+  text-align: left;
+}
+.label {
+  font-weight: 600;
+  margin: 8px 0 6px;
+}
+.sets {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.set-choice {
+  border: 2px solid var(--line);
+  border-radius: 14px;
+  background: var(--bg-2);
+  padding: 10px 6px;
+  font-weight: 600;
+}
+.set-choice.on {
+  border-color: var(--gold);
+  background: color-mix(in srgb, var(--gold) 18%, var(--card));
+}
+.set-preview {
+  display: flex;
+  justify-content: center;
+}
+.set-choice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+.set-preview .piece-svg {
+  width: clamp(24px, 8vw, 34px);
+  height: clamp(24px, 8vw, 34px);
+}
+.set-preview {
+  /* drawn on a light board square so both white and black pieces read in either theme */
+  background: var(--sq-light);
+  padding: 2px 4px;
+}
+.set-preview:first-child {
+  border-radius: 8px 8px 0 0;
+  padding-top: 4px;
+}
+.set-preview + .set-preview {
+  border-radius: 0 0 8px 8px;
+  padding-bottom: 4px;
+  margin-bottom: 6px;
+}
+.toggle {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 6px 0;
+}
+.toggle input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .star,
+.sq.hint::after,
+.board.shake {
+    animation: none;
+  }
+}
+
+
+
+/* ---------- home tiles ---------- */
+.tiles {
+  display: grid;
+  gap: 14px;
+  margin-top: 24px;
+}
+.tile {
+  width: 100%;
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  text-align: left;
+  border: 0;
+  border-radius: 18px;
+  padding: 16px 18px;
+}
+.tile strong {
+  display: block;
+  font-size: 1.15rem;
+}
+.tile small {
+  opacity: 0.9;
+}
+.tile-icon {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+.tile-icon .piece-svg {
+  width: 52px;
+  height: 52px;
+}
+.learn-tile {
+  background: var(--card);
+  border: 3px solid var(--gold);
+  box-shadow: 0 5px 0 var(--gold-deep);
+}
+
+/* ---------- wide screens: use the width ---------- */
+@media (min-width: 900px) {
+  .hero,
+  .foot {
+    text-align: left;
+  }
+  .tiles {
+    grid-template-columns: 1fr 1fr;
+  }
+  
+
+  .level.sprint-card {
+    display: block;
+    max-width: 32rem;
+    /* the challenge card sits in the middle of the page */
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+/* wide screens, sized like chess.com: the board follows the window height,
+   a 360px panel beside it, exactly as tall as the board */
+@media (min-width: 900px) {
+  .play {
+    /* window height minus the 68px header row and a 16px bottom margin */
+    --board: min(calc(100vh - 84px), calc(100vw - 6rem - 392px), 860px);
+    display: grid;
+    grid-template-columns: var(--board) 360px;
+    column-gap: 32px;
+    align-items: stretch;
+    justify-content: start;
+  }
+  .play .board {
+    width: var(--board);
+  }
+  /* a board page fits the window without scrolling */
+  .app:has(.play) {
+    padding-bottom: 16px;
+  }
+  .panel {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 18px;
+  }
+  
+  .panel .message {
+    justify-content: flex-start;
+    text-align: left;
+  }
+  
+  .panel .sprint-bar {
+    width: 100%;
+  }
+}
+.arrow {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 4;
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* ---------- learn overview (lichess's layout, our colours) ---------- */
+:root {
+  --slate: #5d6275;
+}
+.learn-map {
+  display: grid;
+  gap: 24px;
+  align-items: start;
+}
+.learn-side {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+}
+.learn-emblem .piece-svg {
+  width: 110px;
+  height: 110px;
+}
+.learn-side h1 {
+  margin: 4px 0 0;
+  font-size: 1.5rem;
+}
+.learn-side p {
+  margin: 4px 0;
+}
+.progress {
+  position: relative;
+  height: 30px;
+  border-radius: 6px;
+  background: var(--bg-2);
+  overflow: hidden;
+  margin: 14px 0 6px;
+}
+.progress span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--accent);
+  transition: width 0.4s;
+}
+.progress b {
+  position: relative;
+  line-height: 30px;
+  font-size: 0.9rem;
+}
+.small {
+  font-size: 0.85rem;
+}
+.link-btn {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--muted);
+  text-decoration: underline;
+}
+.categ h2 {
+  font-size: 1.35rem;
+  font-weight: 400;
+  color: var(--muted);
+  margin: 0 0 12px;
+}
+.categ + .categ {
+  margin-top: 28px;
+}
+.stage-grid {
+  display: grid;
+  gap: 14px;
+}
+.stage-card {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  text-align: left;
+  min-height: 90px;
+  padding: 14px 16px;
+  border-radius: 8px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  transition: border-color 0.15s, transform 0.15s;
+}
+.stage-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+.stage-card.next {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+.stage-icon {
+  flex: none;
+  width: 60px;
+  height: 60px;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  background: var(--slate);
+}
+.stage-card.ongoing .stage-icon,
+.stage-card.next .stage-icon {
+  background: var(--accent);
+}
+.stage-card.done .stage-icon {
+  background: var(--green);
+}
+.stage-icon .piece-svg {
+  width: 46px;
+  height: 46px;
+}
+.stage-title {
+  display: block;
+  font-size: 1.3rem;
+}
+.stage-sub {
+  display: block;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+.ribbon {
+  position: absolute;
+  top: 14px;
+  right: -34px;
+  width: 130px;
+  transform: rotate(45deg);
+  text-align: center;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 3px 0;
+}
+
+/* ---------- lesson page ---------- */
+.stage-menu {
+  display: none;
+}
+.panel-head {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+.panel-head h2 {
+  margin: 0;
+  font-size: 1.45rem;
+  font-weight: 600;
+}
+.panel-head p {
+  margin: 0;
+  opacity: 0.9;
+}
+.panel-icon .piece-svg {
+  width: 54px;
+  height: 54px;
+  display: block;
+}
+.goal {
+  text-align: center;
+  padding: 16px 12px;
+  font-weight: 600;
+  border-radius: 8px;
+  background: var(--bg-2);
+  width: 100%;
+}
+.goal.success {
+  background: var(--green);
+  color: #fff;
+}
+.goal.success strong {
+  display: block;
+  font-size: 1.4rem;
+}
+.goal.fail {
+  color: var(--bad);
+}
+.goal-stars {
+  font-size: 1.7rem;
+  letter-spacing: 4px;
+  color: rgba(255, 255, 255, 0.35);
+}
+.goal-stars .on {
+  color: #fff;
+}
+.tabs {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  width: 100%;
+}
+.tab {
+  border: 0;
+  background: none;
+  padding: 10px 0;
+  color: var(--link);
+  font-weight: 600;
+  min-width: 0;
+}
+.tab + .tab {
+  border-left: 1px solid var(--line);
+}
+.tab.done {
+  color: var(--gold);
+}
+.tab.now {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.tab-stars {
+  font-size: 0.65rem;
+  letter-spacing: -1px;
+}
+.controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  width: 100%;
+}
+.stage-card-modal {
+  text-align: center;
+}
+.stage-card-modal p {
+  margin: 0 0 16px;
+}
+.modal-piece .piece-svg {
+  width: 110px;
+  height: 110px;
+}
+.primary-btn.wide {
+  width: 100%;
+  padding: 12px;
+}
+/* on a phone the stage header and goal sit above the board */
+.panel .panel-head,
+.panel .goal {
+  order: -1;
+}
+
+@media (min-width: 700px) {
+  .stage-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (min-width: 900px) {
+  .learn-map {
+    grid-template-columns: 242px 1fr;
+    gap: 28px;
+  }
+  .learn-side {
+    position: sticky;
+    /* below the pinned header */
+    top: calc(var(--header-h) + 16px);
+  }
+  /* inside the panel card the header and tabs bleed to its edges, like lichess */
+  .panel .panel-head {
+    margin: -18px -18px 0;
+    border-radius: 8px 8px 0 0;
+  }
+  .panel .goal {
+    border-radius: 0;
+    margin: -14px -18px 0;
+    width: auto;
+  }
+  .panel .tabs {
+    margin: -14px -18px 0;
+    width: auto;
+    border-radius: 0;
+    border-width: 1px 0;
+  }
+  .panel .controls {
+    margin-top: auto;
+  }
+}
+@media (min-width: 1200px) {
+  .stage-page {
+    display: grid;
+    grid-template-columns: 270px 1fr;
+    gap: 32px;
+    align-items: start;
+  }
+  .stage-page .play {
+    --board: min(calc(100vh - 84px), calc(100vw - 6rem - 392px - 302px), 860px);
+  }
+  .stage-menu {
+    display: block;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .menu-back,
+  .menu-title,
+  .menu-stage {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    border: 0;
+    background: none;
+    text-align: left;
+    padding: 12px 16px;
+  }
+  .menu-back {
+    font-weight: 600;
+    border-bottom: 1px solid var(--line);
+  }
+  .menu-title {
+    font-size: 1rem;
+    border-top: 1px solid var(--line);
+  }
+  .menu-section:first-of-type .menu-title {
+    border-top: 0;
+  }
+  .menu-section.open .menu-title {
+    background: var(--accent);
+    color: var(--accent-ink);
+  }
+  .menu-stage {
+    padding: 0 16px 0 0;
+    color: var(--muted);
+  }
+  .menu-stage.now {
+    background: var(--bg-2);
+    color: var(--ink);
+    font-weight: 600;
+  }
+  .menu-icon {
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    background: var(--slate);
+    flex: none;
+  }
+  .menu-stage.now .menu-icon,
+  .menu-stage.ongoing .menu-icon {
+    background: var(--accent);
+  }
+  .menu-stage.done .menu-icon {
+    background: var(--green);
+  }
+  .menu-icon .piece-svg {
+    width: 32px;
+    height: 32px;
+  }
+}
+.icon-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+/* lesson symbols are white on the coloured icon squares, ink-coloured on cards */
+.stage-icon .symbol,
+.menu-icon .symbol,
+.panel-icon .symbol {
+  color: #fff;
+}
+.modal-piece .symbol {
+  color: var(--ink);
+}
+
+/* ---------- credits ---------- */
+.credits {
+  max-width: 48rem;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 24px;
+}
+.credits li {
+  margin: 12px 0;
+}
+.settings .link-btn {
+  display: block;
+  margin: 10px 0 4px;
+}
+.group-symbol {
+  width: 1.4em;
+  height: 1.4em;
+  flex: none;
+}
+.categ h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.categ h2 .group-symbol {
+  color: var(--gold);
+}
+
+/* ---------- puzzles page ---------- */
+@media (min-width: 900px) {
+  .tiles {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+.tile-symbol {
+  color: var(--gold);
+}
+.puzzles-page {
+  display: grid;
+  gap: 28px;
+}
+.filter-card {
+  /* light grey panel (#e2dfdb in the light theme) so the white option buttons stand out on it */
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 18px 20px;
+  display: grid;
+  gap: 18px;
+}
+.rating-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.rating-head strong {
+  font-size: 1.3rem;
+  font-variant-numeric: tabular-nums;
+}
+.label {
+  font-weight: 600;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.range {
+  position: relative;
+  height: 32px;
+  margin-top: 6px;
+}
+.range::before,
+.range-fill {
+  content: '';
+  position: absolute;
+  top: 13px;
+  height: 6px;
+  border-radius: 3px;
+}
+.range::before {
+  left: 0;
+  right: 0;
+  background: var(--bg-2);
+}
+.range-fill {
+  background: var(--accent);
+}
+/* two sliders stacked on one track; only their handles take the pointer */
+.range input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  margin: 0;
+  background: none;
+  pointer-events: none;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.range input::-webkit-slider-thumb {
+  pointer-events: auto;
+  -webkit-appearance: none;
+  /* 22px including the border: the page lines the track marks up to this width */
+  box-sizing: border-box;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  border: 3px solid var(--accent);
+  cursor: pointer;
+}
+.range input::-moz-range-thumb {
+  pointer-events: auto;
+  /* Firefox adds the border outside the size: 16 + 2 * 3 = 22, the same as Chrome's */
+  box-sizing: content-box;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  border: 3px solid var(--accent);
+  cursor: pointer;
+}
+.choice {
+  display: grid;
+  gap: 8px;
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.chip {
+  border: 2px solid var(--line);
+  background: var(--bg-2);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-weight: 600;
+}
+.chip.on {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.chip:disabled,
+.stage-card:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.chip-icon {
+  padding: 2px 8px;
+}
+.chip-icon .piece-svg {
+  width: 30px;
+  height: 30px;
+  display: block;
+}
+.start-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.match {
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+.primary-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.center {
+  text-align: center;
+}
+
+/* ---------- puzzles page: chips with pictures, slider checkpoints ---------- */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.chip-pieces {
+  display: inline-flex;
+}
+.chip-pieces .piece-svg {
+  width: 26px;
+  height: 26px;
+  display: block;
+}
+.chip-symbol {
+  width: 22px;
+  height: 22px;
+  flex: none;
+}
+.range-dot {
+  position: absolute;
+  top: 10px;
+  width: 12px;
+  height: 12px;
+  margin-left: -6px;
+  border-radius: 50%;
+  background: var(--bg-2);
+  border: 2px solid var(--muted);
+  pointer-events: none;
+}
+.range-dot.in {
+  background: var(--accent);
+  border-color: var(--accent-ink);
+}
+.range-labels {
+  position: relative;
+  height: 22px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.range-labels span {
+  position: absolute;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+.range-labels span:first-child {
+  /* the first label starts under its handle instead of hanging off the card's edge */
+  transform: translateX(-11px);
+}
+.range-labels small {
+  opacity: 0.7;
+}
+
+/* ---------- time challenge ---------- */
+.center-choice {
+  justify-items: center;
+  margin: 14px 0;
+}
+.center-choice .chips {
+  justify-content: center;
+}
+
+/* ---------- header switches (theme, language), as on Lerno ---------- */
+.top-actions {
+  grid-column: 3;
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.top-actions .icon-btn {
+  grid-column: auto;
+}
+.ghost-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  font-weight: 600;
+}
+.ghost-switch:hover {
+  background: var(--bg-2);
+}
+/* on a phone the buttons share the first line and the page title takes its own, centred */
+@media (max-width: 600px) {
+  .top {
+    grid-template-columns: auto 1fr;
+    row-gap: 4px;
+  }
+  .top-actions {
+    grid-column: 2;
+  }
+  .level-title {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+}
+.bad-text {
+  color: var(--bad);
+  font-weight: 600;
+}
+
+/* ---------- settings: dropdowns with previews, a live mini board ---------- */
+.card.settings {
+  /* one fixed size: an open dropdown floats inside it and never resizes the window */
+  width: min(100%, 460px);
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  position: relative;
+}
+.mini-board {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  border-radius: 8px;
+  overflow: hidden;
+  margin: 4px 0 6px;
+}
+.mini-board span {
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+}
+.mini-board .piece-svg {
+  width: 88%;
+  height: 88%;
+}
+.picker {
+  position: relative;
+  margin-bottom: 10px;
+}
+.picker-current,
+.picker-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  border: 2px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg-2);
+  padding: 6px 10px;
+}
+.picker-current[aria-expanded='true'] {
+  border-color: var(--accent);
+}
+.picker-name {
+  flex: 1;
+  font-weight: 600;
+}
+.picker-caret {
+  color: var(--muted);
+}
+.picker-list {
+  position: absolute;
+  z-index: 60;
+  left: 0;
+  right: 0;
+  overflow-y: auto;
+  display: grid;
+  gap: 4px;
+  padding: 6px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+}
+.picker-option {
+  border-color: transparent;
+}
+.picker-option.on {
+  border-color: var(--accent);
+}
+.picker-option:hover {
+  border-color: var(--line);
+}
+.piece-strip {
+  display: inline-flex;
+  background: var(--sq-light);
+  border-radius: 6px;
+  padding: 1px 3px;
+}
+.piece-strip .piece-svg {
+  width: 30px;
+  height: 30px;
+  display: block;
+}
+.swatch {
+  display: grid;
+  grid-template-columns: 16px 16px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.swatch span {
+  width: 16px;
+  height: 16px;
+}
+.credits ul ul {
+  margin: 6px 0 0;
+}
+
+/* ---------- puzzles filter: white option buttons ---------- */
+/* the buttons are white (the card colour) and a choice is marked by a blue outline, not a blue
+   fill, so the pieces always stand on white and read normally */
+.filter-card .chip {
+  background: var(--card);
+}
+.filter-card .chip.on {
+  background: var(--card);
+  color: var(--accent);
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+/* the pieces keep the same box in both themes so switching never moves them; only the
+   dark theme fills it with a light square, since its buttons are dark */
+.filter-card .chip-pieces {
+  border-radius: 6px;
+  padding: 1px 2px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .filter-card .chip-pieces {
+    background: var(--sq-light);
+  }
+}
+:root[data-theme='dark'] .filter-card .chip-pieces {
+  background: var(--sq-light);
+}
+/* the slider's empty track is white too; on the grey panel a grey track would vanish */
+.filter-card .range::before {
+  background: var(--card);
+}
+
+/* ---------- the header stays pinned while scrolling, as on Lerno ---------- */
+:root {
+  --header-h: 68px;
+}
+/* a full-width bar, pinned to the top; the header inside keeps the page column's width */
+.top-bar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: var(--card);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+}
+.page-col {
+  max-width: 90rem;
+  margin: 0 auto;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+@media (min-width: 768px) {
+  .page-col {
+    padding-left: 3rem;
+    padding-right: 3rem;
+  }
+}
