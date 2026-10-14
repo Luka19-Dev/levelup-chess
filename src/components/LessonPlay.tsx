@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Board } from './Board'
 import type { Position, Shape } from './Board'
-import { PIECE_NAME, Piece } from '../pieces/sets'
 import type { SetId } from '../pieces/sets'
 import { isPromotion, load, opponentMove, opponentToMove, play, score, start, targets } from '../lib/lesson'
 import type { LevelDef, Outcome, State } from '../lib/lesson'
@@ -10,7 +9,7 @@ import { GOALS } from '../data/learnText'
 import { sfx } from '../lib/sound'
 import { burst } from '../lib/celebrate'
 import { caps } from '../lib/caps'
-import { t, tr } from '../lib/i18n'
+import { t } from '../lib/i18n'
 import type { GoalState } from './LessonPanel'
 
 type Props = {
@@ -28,7 +27,7 @@ const RESTART_DELAY = 1800
 export function LessonPlay({ level, set, panel, onDone }: Props) {
   const player = level.color === 'white' ? 'w' : 'b'
   const [state, setState] = useState<State>(() => start(level))
-  const [goal, setGoal] = useState<GoalState>({ kind: 'goal', text: tr(GOALS[level.goal]) })
+  const [goal, setGoal] = useState<GoalState>({ kind: 'goal', text: GOALS[level.goal] })
   const [busy, setBusy] = useState(false)
   const [shapes, setShapes] = useState<Shape[]>(level.shapes ?? [])
   const [anim, setAnim] = useState<{ from: string; to: string; key: number } | null>(null)
@@ -67,7 +66,7 @@ export function LessonPlay({ level, set, panel, onDone }: Props) {
     timers.current = []
     const s = start(level)
     setState(s)
-    setGoal({ kind: 'goal', text: tr(GOALS[level.goal]) })
+    setGoal({ kind: 'goal', text: GOALS[level.goal] })
     setShapes(level.shapes ?? [])
     setAnim(null)
     setLast(null)
@@ -93,12 +92,12 @@ export function LessonPlay({ level, set, panel, onDone }: Props) {
           kind: 'fail',
           text:
             out.why === 'check'
-              ? t('შენი მეფე ქიშის ქვეშ დარჩებოდა! სცადე სხვა სვლა.', 'Your king would be left in check! Try another move.')
-              : t('ეს ქიშია! ნამდვილ პარტიაში ახლა მოწინააღმდეგე იმოძრავებდა. სცადე სხვა სვლა.', 'That is check! In a real game the opponent would have to answer it. Try another move.'),
+              ? { ka: 'შენი მეფე ქიშის ქვეშ დარჩებოდა! სცადე სხვა სვლა.', en: 'Your king would be left in check! Try another move.' }
+              : { ka: 'ეს ქიშია! ნამდვილ პარტიაში ახლა მოწინააღმდეგე იმოძრავებდა. სცადე სხვა სვლა.', en: 'That is check! In a real game the opponent would have to answer it. Try another move.' },
         })
         later(() => {
           setBusy(false)
-          setGoal({ kind: 'goal', text: tr(GOALS[level.goal]) })
+          setGoal({ kind: 'goal', text: GOALS[level.goal] })
         }, RESTART_DELAY)
         return
       }
@@ -106,9 +105,9 @@ export function LessonPlay({ level, set, panel, onDone }: Props) {
       slide(from, to)
       if (out.why === 'capture' && out.capture) {
         const cap = out.capture
-        setGoal({ kind: 'fail', text: t('მოწინააღმდეგე შენს ფიგურას აიყვანდა! სცადე თავიდან.', 'The opponent would take your piece! Try again.') })
+        setGoal({ kind: 'fail', text: { ka: 'მოწინააღმდეგე შენს ფიგურას აიყვანდა! სცადე თავიდან.', en: 'The opponent would take your piece! Try again.' } })
         setShapes([{ arrow: cap.from + cap.to, color: 'red' }])
-      } else setGoal({ kind: 'fail', text: t('ასე არ გამოვა. სცადე თავიდან.', 'That does not work. Try again.') })
+      } else setGoal({ kind: 'fail', text: { ka: 'ასე არ გამოვა. სცადე თავიდან.', en: 'That does not work. Try again.' } })
       later(restart, RESTART_DELAY)
       return
     }
@@ -130,7 +129,7 @@ export function LessonPlay({ level, set, panel, onDone }: Props) {
     }
     if (collected) sfx.star()
     else sfx.play({ capture: !!m.captured, castle: m.flags.includes('k') || m.flags.includes('q'), promotion: !!m.promotion, check: load(out.state.fen).inCheck() })
-    if (goal.kind === 'fail') setGoal({ kind: 'goal', text: tr(GOALS[level.goal]) })
+    if (goal.kind === 'fail') setGoal({ kind: 'goal', text: GOALS[level.goal] })
     if (out.opponentNext) opponent(out.state)
   }
 
@@ -161,30 +160,21 @@ export function LessonPlay({ level, set, panel, onDone }: Props) {
         stars={state.apples}
         shapes={shapes}
         shakeKey={shake}
+        promotion={
+          promo && {
+            to: promo.to,
+            color: player,
+            onPick: (p) => {
+              const { from, to } = promo
+              setPromo(null)
+              apply(play(level, state, from, to, p), from, to)
+            },
+            onCancel: () => setPromo(null),
+          }
+        }
       />
       <aside className="panel">
         {panel(goal)}
-        {promo && (
-          <div className="promotion" role="group" aria-label={t('აირჩიე ფიგურა', 'Choose a piece')}>
-            <span className="label">{caps(t('აირჩიე ფიგურა', 'Choose a piece'))}</span>
-            <div className="chips">
-              {(['q', 'n', 'r', 'b'] as const).map((p) => (
-                <button
-                  key={p}
-                  className="chip chip-icon"
-                  aria-label={tr(PIECE_NAME[p])}
-                  onClick={() => {
-                    const { from, to } = promo
-                    setPromo(null)
-                    apply(play(level, state, from, to, p), from, to)
-                  }}
-                >
-                  <Piece set={set} color={player} type={p} />
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
         <div className="controls">
           {level.nbMoves > 1 && (
             <span className="muted">

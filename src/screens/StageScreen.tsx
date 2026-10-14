@@ -36,11 +36,11 @@ export function StageScreen({ stage, level, set, learn, onResult, go }: Props) {
   // the intro card shows when a stage is opened at its start, as on lichess
   const [intro, setIntro] = useState(level === undefined && !results.some(Boolean))
   const [finished, setFinished] = useState(false)
-  const [puzzleGoal, setPuzzleGoal] = useState<GoalState>({ kind: 'goal', text: tr(stage.intro) })
+  const [puzzleGoal, setPuzzleGoal] = useState<GoalState>({ kind: 'goal', text: stage.intro })
   const solvedTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   // any change of level (tabs, menu, browser back) clears the last puzzle's result and its pending advance
   useEffect(() => {
-    setPuzzleGoal({ kind: 'goal', text: tr(stage.intro) })
+    setPuzzleGoal({ kind: 'goal', text: stage.intro })
     return () => clearTimeout(solvedTimer.current)
   }, [index, stage])
 

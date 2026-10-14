@@ -17,7 +17,7 @@ export function PuzzlePlay({ filter, set, go }: { filter: Filter; set: SetId; go
   const [list, setList] = useState<Puzzle[] | null>(null)
   const [failed, setFailed] = useState(false)
   const [at, setAt] = useState(0)
-  const [goal, setGoal] = useState<GoalState>({ kind: 'goal', text: '' })
+  const [goal, setGoal] = useState<GoalState>({ kind: 'goal', text: { ka: '', en: '' } })
   const [tally, setTally] = useState({ clean: 0, helped: 0 })
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
@@ -41,7 +41,7 @@ export function PuzzlePlay({ filter, set, go }: { filter: Filter; set: SetId; go
 
   function next() {
     clearTimeout(timer.current)
-    setGoal({ kind: 'goal', text: '' })
+    setGoal({ kind: 'goal', text: { ka: '', en: '' } })
     setAt((i) => i + 1)
   }
 
@@ -81,7 +81,7 @@ export function PuzzlePlay({ filter, set, go }: { filter: Filter; set: SetId; go
         </span>
       </div>
       {goal.kind === 'success' && (
-        <div className="goal success" aria-live="polite">
+        <div className="goal success under" aria-live="polite">
           <strong>{tr(PRAISE[goal.stars])}</strong>
         </div>
       )}
@@ -105,14 +105,18 @@ export function PuzzlePlay({ filter, set, go }: { filter: Filter; set: SetId; go
           timer.current = setTimeout(next, 1500)
         }}
         bottom={
-          <div className="controls">
-            <span className="muted">
-              {t('უშეცდომოდ', 'Clean')}: {tally.clean} · {t('დახმარებით', 'With help')}: {tally.helped}
-            </span>
-            <button className="ghost-btn" onClick={next}>
-              {caps(goal.kind === 'success' ? t('შემდეგი', 'Next') : t('გამოტოვება', 'Skip'))} →
-            </button>
-          </div>
+          <span className="muted">
+            {t('უშეცდომოდ', 'Clean')}: {tally.clean} · {t('დახმარებით', 'With help')}: {tally.helped}
+          </span>
+        }
+        actions={
+          <button className="ghost-btn icon-label" onClick={next}>
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+              <path d="M5 5.5v13L15 12z" fill="currentColor" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+              <path d="M18.5 5.5v13" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
+            </svg>
+            {caps(goal.kind === 'success' ? t('შემდეგი', 'Next') : t('გამოტოვება', 'Skip'))}
+          </button>
         }
       />
     </div>

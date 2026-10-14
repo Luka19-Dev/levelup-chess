@@ -21,8 +21,10 @@ type Props = {
   onMistake?: () => void
   /** shown at the top of the side panel, above the move message */
   top?: ReactNode
-  /** shown at the bottom of the side panel */
+  /** shown at the bottom of the side panel, left of the buttons */
   bottom?: ReactNode
+  /** buttons after the hint button, e.g. skip */
+  actions?: ReactNode
 }
 
 function toPosition(c: Chess): Position {
@@ -37,7 +39,7 @@ function kingInCheck(c: Chess): Square | null {
   return null
 }
 
-export function PuzzleRunner({ puzzle, set, mode, onSolved, onFailed, onMistake, top, bottom }: Props) {
+export function PuzzleRunner({ puzzle, set, mode, onSolved, onFailed, onMistake, top, bottom, actions }: Props) {
   const game = useRef(new Chess(puzzle.fen))
   const [, redraw] = useState(0)
   const [step, setStep] = useState(0)
@@ -132,12 +134,13 @@ export function PuzzleRunner({ puzzle, set, mode, onSolved, onFailed, onMistake,
   }
 
   function showHint() {
-    if (status !== 'yours' && status !== 'wrong') return
+    if (!usable) return
     tally.current.hints++
     setHint(puzzle.moves[step].slice(0, 2))
   }
 
   const c = game.current
+  const usable = status === 'yours' || status === 'wrong'
   const message =
     status === 'waiting'
       ? t('მოწინააღმდეგე ფიქრობს...', 'The opponent is thinking...')
@@ -150,8 +153,8 @@ export function PuzzleRunner({ puzzle, set, mode, onSolved, onFailed, onMistake,
             : status === 'failed'
               ? t('ეს სვლა არ იყო.', 'That was not the move.')
               : player === 'w'
-                ? t('შენი სვლაა. თამაშობ თეთრებით.', 'Your move. You play white.')
-                : t('შენი სვლაა. თამაშობ შავებით.', 'Your move. You play black.')
+                ? caps(t('თეთრის სვლაა', 'White to move'))
+                : caps(t('შავის სვლაა', 'Black to move'))
 
   return (
     <div className="play">
@@ -173,13 +176,26 @@ export function PuzzleRunner({ puzzle, set, mode, onSolved, onFailed, onMistake,
         <div className={`message ${status}`}>
           <span className={`turn-dot ${player}`} />
           {message}
-          {mode === 'learn' && (status === 'yours' || status === 'wrong') && (
-            <button className="ghost-btn" onClick={showHint}>
-              {caps(t('მინიშნება', 'Hint'))}
-            </button>
-          )}
         </div>
-        {bottom}
+        {(mode === 'learn' || bottom || actions) && (
+          <div className="controls">
+            {bottom ?? <span />}
+            <div className="actions">
+              {mode === 'learn' && (
+                // stays in place between moves, only greyed out, so nothing shifts
+                <button className="primary-btn icon-label" onClick={showHint} disabled={!usable}>
+                  {/* a lit bulb: the bulb, its base and five rays */}
+                  <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                    <path d="M12 6.5a4.5 4.5 0 0 0-2.7 8.1c.5.4.8 1 .8 1.6v.8h3.8v-.8c0-.6.3-1.2.8-1.6A4.5 4.5 0 0 0 12 6.5z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+                    <path d="M10.4 20.2h3.2M12 1.8v2.2M5.4 4.4l1.5 1.5M18.6 4.4l-1.5 1.5M2.8 11h2.1M19.1 11h2.1" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                  </svg>
+                  {caps(t('მინიშნება', 'Hint'))}
+                </button>
+              )}
+              {actions}
+            </div>
+          </div>
+        )}
       </aside>
     </div>
   )

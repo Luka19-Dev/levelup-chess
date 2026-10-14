@@ -1,7 +1,8 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
-import { Piece } from '../pieces/sets'
+import { PIECE_NAME, Piece } from '../pieces/sets'
 import type { Color, PieceType, SetId } from '../pieces/sets'
+import { tr } from '../lib/i18n'
 
 export type Square = string // 'e4'
 export type Placed = { type: PieceType; color: Color }
@@ -35,10 +36,14 @@ type Props = {
   shapes?: Shape[]
   /** called with any clicked square while no piece is movable (setup lessons) */
   onSquare?: (s: Square) => void
+  /** a pawn waiting on its last row: the four pieces stand on that file to pick from */
+  promotion?: { to: Square; color: Color; onPick: (p: PieceType) => void; onCancel: () => void } | null
 }
 
+const PROMOTE_TO = ['q', 'n', 'r', 'b'] as const
+
 export function Board(props: Props) {
-  const { position, orientation, set, movable, legalFrom, onMove, lastMove, anim, hint, check, stars = [], shakeKey = 0, shapes = [], onSquare } = props
+  const { position, orientation, set, movable, legalFrom, onMove, lastMove, anim, hint, check, stars = [], shakeKey = 0, shapes = [], onSquare, promotion } = props
   const boardRef = useRef<HTMLDivElement>(null)
   const [selected, setSelected] = useState<Square | null>(null)
   const [drag, setDrag] = useState<{ from: Square; x: number; y: number; moved: boolean } | null>(null)
@@ -174,6 +179,26 @@ export function Board(props: Props) {
         )
       })}
       {shapes.length > 0 && <Shapes shapes={shapes} at={toScreen} />}
+      {promotion && (
+        // on the board itself, so a phone never has to scroll to find it; a tap beside it cancels
+        <div className="promo-shade" onPointerDown={(e) => { e.stopPropagation(); promotion.onCancel() }}>
+          {PROMOTE_TO.map((type, i) => {
+            const [col, row] = toScreen(promotion.to)
+            return (
+              <button
+                key={type}
+                className="promo-pick"
+                aria-label={tr(PIECE_NAME[type])}
+                style={{ left: `${col * 12.5}%`, top: `${(row === 0 ? i : 7 - i) * 12.5}%` }}
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={() => promotion.onPick(type)}
+              >
+                <Piece set={set} color={promotion.color} type={type} />
+              </button>
+            )
+          })}
+        </div>
+      )}
       {drag?.moved && position[drag.from] && boxRect && (
         <div
           className="ghost"

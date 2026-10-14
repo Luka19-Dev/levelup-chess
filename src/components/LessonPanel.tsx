@@ -3,8 +3,10 @@ import type { Stage } from '../data/learn'
 import { caps } from '../lib/caps'
 import { StageIcon } from './StageIcon'
 import { t, tr } from '../lib/i18n'
+import type { Txt } from '../lib/i18n'
 
-export type GoalState = { kind: 'goal'; text: string } | { kind: 'success'; stars: number } | { kind: 'fail'; text: string }
+// both languages are kept, so switching language mid-lesson re-words the box instead of freezing it
+export type GoalState = { kind: 'goal'; text: Txt } | { kind: 'success'; stars: number } | { kind: 'fail'; text: Txt }
 
 export const PRAISE = [{ ka: '', en: '' }, { ka: 'გამოვიდა!', en: 'Done!' }, { ka: 'კარგია!', en: 'Good!' }, { ka: 'შესანიშნავია!', en: 'Excellent!' }]
 
@@ -35,7 +37,7 @@ export function LessonPanel(props: { stage: Stage; set: SetId; goal: GoalState; 
             </span>
           </>
         ) : (
-          goal.text
+          tr(goal.text)
         )}
       </div>
       <div className="tabs" role="tablist">

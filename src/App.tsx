@@ -152,7 +152,7 @@ export default function App() {
       </div>
 
       <div className="app">
-        <main key={saved.lang}>
+        <main>
           {route.name === 'home' && <Home saved={saved} />}
           {route.name === 'learn' && <LearnMap set={saved.set} learn={saved.learn} onReset={() => update({ learn: {} })} go={go} />}
           {route.name === 'stage' && (
