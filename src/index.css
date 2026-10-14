@@ -101,6 +101,10 @@ a {
   color: var(--link);
 }
 
+/* every page keeps a gap under the pinned header (the time challenge card used to be the only one) */
+main {
+  padding-top: 20px;
+}
 .app {
   /* same geometry as Lerno and lvlup.ge: 90rem cap, 1.5rem gutters, 3rem from 768px */
   max-width: 90rem;
@@ -269,6 +273,19 @@ a {
 .sq.dark {
   background: var(--sq-dark);
 }
+/* a right-clicked square: filled under the piece, above the last-move tint; hint, check, stars
+   and coordinates still show on top of it */
+.sq .mark {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+.sq.hint::after,
+.sq.check::after,
+.sq .star,
+.sq .coord {
+  z-index: 2;
+}
 .sq.last::after,
 .sq.sel::after,
 .sq.hint::after,
@@ -292,7 +309,8 @@ a {
   50% { opacity: 0.55; }
 }
 .sq.check::after {
-  background: radial-gradient(circle, rgba(230, 30, 50, 0.85) 0%, rgba(230, 30, 50, 0.35) 45%, transparent 72%);
+  /* the king's whole square turns red, so it reads as "this king is in check", not as a wrong move */
+  background: rgba(220, 40, 40, 0.72);
 }
 .coord {
   position: absolute;
@@ -497,7 +515,6 @@ a {
   border: 1px solid var(--line);
   border-radius: 20px;
   padding: 28px 20px;
-  margin-top: 20px;
 }
 .sprint-card h2 {
   margin: 0;
@@ -708,8 +725,8 @@ a {
    a 360px panel beside it, exactly as tall as the board */
 @media (min-width: 900px) {
   .play {
-    /* window height minus the 68px header row and a 16px bottom margin */
-    --board: min(calc(100vh - 84px), calc(100vw - 6rem - 392px), 860px);
+    /* window height minus the 68px header row, the 20px gap under it and a 16px bottom margin */
+    --board: min(calc(100vh - 104px), calc(100vw - 6rem - 392px), 860px);
     display: grid;
     grid-template-columns: var(--board) 360px;
     column-gap: 32px;
@@ -942,8 +959,6 @@ a {
 }
 .tabs {
   display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: 1fr;
   border: 1px solid var(--line);
   border-radius: 8px;
   overflow: hidden;
@@ -959,6 +974,13 @@ a {
 }
 .tab + .tab {
   border-left: 1px solid var(--line);
+}
+/* the first of each row of 10 has the box edge on its left; rows after the first get a line above */
+.tab:nth-child(10n + 1) {
+  border-left: 0;
+}
+.tab:nth-child(n + 11) {
+  border-top: 1px solid var(--line);
 }
 .tab.done {
   color: var(--gold);
@@ -997,6 +1019,16 @@ a {
 .panel .panel-head,
 .panel .goal {
   order: -1;
+}
+/* on a phone the goal box above the board keeps the height of its green "solved" state,
+   so turning green never pushes the board down */
+@media (max-width: 899px) {
+  .panel .goal {
+    min-height: 106px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
 }
 /* a box that only appears when a puzzle is solved goes under the board, so the board never moves */
 .panel .goal.under {
@@ -1046,7 +1078,7 @@ a {
     align-items: start;
   }
   .stage-page .play {
-    --board: min(calc(100vh - 84px), calc(100vw - 6rem - 392px - 302px), 860px);
+    --board: min(calc(100vh - 104px), calc(100vw - 6rem - 392px - 302px), 860px);
   }
   .stage-menu {
     display: block;
@@ -1156,11 +1188,7 @@ a {
 }
 
 /* ---------- puzzles page ---------- */
-@media (min-width: 900px) {
-  .tiles {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
+/* four tiles: two by two on a wide screen */
 .tile-symbol {
   color: var(--gold);
 }
@@ -1351,6 +1379,22 @@ a {
 }
 .range-labels small {
   opacity: 0.7;
+}
+/* on a phone the three labels would overlap: each number goes under its word */
+@media (max-width: 600px) {
+  .range-labels {
+    height: 34px;
+    line-height: 1.2;
+  }
+  .range-labels span {
+    text-align: center;
+  }
+  .range-labels span:first-child {
+    text-align: left;
+  }
+  .range-labels small {
+    display: block;
+  }
 }
 
 /* ---------- time challenge ---------- */
@@ -1558,4 +1602,280 @@ a {
     padding-left: 3rem;
     padding-right: 3rem;
   }
+}
+
+/* ---------- class battle ---------- */
+.battle-lobby {
+  display: grid;
+  gap: 28px;
+}
+.name-row {
+  display: flex;
+  gap: 8px;
+}
+.name-row input {
+  flex: 1;
+  /* an input's built-in width (about 20 letters) would otherwise push the card wider than a phone */
+  width: 0;
+  min-width: 0;
+  font: inherit;
+  padding: 8px 14px;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--ink);
+}
+.name-row input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.player-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 6px;
+}
+.player-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 4px 4px 4px 10px;
+}
+.player-no {
+  color: var(--muted);
+  font-weight: 600;
+  min-width: 1.4em;
+}
+.player-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+.player-list .icon-btn {
+  width: 32px;
+  height: 32px;
+  font-size: 1.1rem;
+}
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.stepper strong {
+  font-size: 1.4rem;
+  min-width: 2ch;
+  text-align: center;
+}
+.stepper .icon-btn {
+  background: var(--card);
+}
+/* a theme overrides side, stage and piece, so those fade while one is chosen (the rating still counts) */
+.themed .choice {
+  opacity: 0.45;
+}
+/* two classes beat `.level.sprint-card { display: block }` on wide screens, which dropped the gaps */
+.sprint-card.battle-card {
+  display: grid;
+  gap: 14px;
+  justify-items: center;
+}
+.confirm-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.ghost-btn.danger {
+  border-color: var(--bad);
+  color: var(--bad);
+}
+/* the battle's small "+1 point" box needs no reserved height */
+.panel .goal.under {
+  min-height: 0;
+}
+.battle-card .primary-btn.wide {
+  margin-top: 6px;
+}
+.battle-card .muted {
+  margin: 0;
+}
+.battle-name {
+  margin: 0;
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: var(--accent);
+  overflow-wrap: anywhere;
+}
+.battle-card .ghost-btn {
+  justify-self: center;
+}
+.battle-icon {
+  font-size: 2rem;
+  line-height: 1;
+}
+.standings {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  display: grid;
+  gap: 4px;
+  text-align: left;
+}
+.standings li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--bg-2);
+}
+.standings li.podium {
+  font-size: 1.1rem;
+}
+.standings .place {
+  /* a fixed width, so names start at the same x whether the place is a medal or a number */
+  width: 2.4rem;
+  flex: none;
+  text-align: center;
+  font-weight: 700;
+  color: var(--muted);
+}
+.standings .podium .place {
+  font-size: 1.4rem;
+}
+/* the players' lists: beside the board on a wide screen (like the lesson menu), under it otherwise;
+   two separate cards, styled alike */
+.battle-side {
+  display: grid;
+  gap: 16px;
+  align-content: start;
+  margin-top: 24px;
+}
+.side-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+@media (min-width: 1200px) {
+  .battle-side {
+    grid-column: 1;
+    grid-row: 1;
+    margin-top: 0;
+  }
+  .battle-main {
+    grid-column: 2;
+    grid-row: 1;
+    min-width: 0;
+  }
+  .battle-main .sprint-card {
+    margin-top: 0;
+    /* centred on the page, not on the column right of the list: shift back by half the
+       list and its gap (270 + 32), but never under the list */
+    margin-left: max(0px, calc((100% - 32rem) / 2 - 151px));
+    margin-right: auto;
+  }
+}
+.side-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 12px 16px;
+  font-size: 1rem;
+  background: var(--bg-2);
+  border-top: 1px solid var(--line);
+}
+.side-title {
+  border-top: 0;
+}
+.side-empty {
+  margin: 0;
+  padding: 12px 16px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.side-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.side-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-top: 1px solid var(--line);
+}
+.side-list .place {
+  width: 2rem;
+  flex: none;
+  text-align: center;
+  font-weight: 700;
+}
+/* the table: ranked, gold places, points on the right */
+.table-list .place {
+  color: var(--gold);
+}
+.table-list strong {
+  font-size: 1.05rem;
+}
+.table-list li.fresh {
+  animation: fresh-row 1.6s ease-out;
+}
+@keyframes fresh-row {
+  0% {
+    background: rgba(40, 170, 60, 0.6);
+    transform: translateX(-12px);
+  }
+  30% {
+    transform: none;
+  }
+  100% {
+    background: transparent;
+  }
+}
+/* the queue: still to play in muted grey, the player at the board in blue */
+.queue-list li {
+  color: var(--muted);
+}
+.queue-list .place {
+  font-weight: 600;
+}
+.queue-list li.now {
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+.queue-list li.now small {
+  opacity: 0.9;
+  white-space: nowrap;
+}
+@media (prefers-reduced-motion: reduce) {
+  .table-list li.fresh {
+    animation: none;
+  }
+}
+/* a used hint, under the player's points in the blue header */
+.panel-head .hint-used {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  padding: 2px 10px 2px 8px;
+  width: fit-content;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  font-size: 0.85rem;
+  font-weight: 600;
 }

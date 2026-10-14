@@ -17,6 +17,7 @@ import { challengeKey } from './lib/challenge'
 import type { Challenge } from './lib/challenge'
 import { PuzzlesPage } from './screens/PuzzlesPage'
 import { PuzzlePlay } from './screens/PuzzlePlay'
+import { Battle } from './screens/Battle'
 import { fromQuery, toQuery } from './lib/bank'
 import { caps } from './lib/caps'
 import { setLang, t, tr } from './lib/i18n'
@@ -26,6 +27,7 @@ type Route =
   | { name: 'learn' }
   | { name: 'stage'; stage: Stage; level?: number }
   | { name: 'sprint' }
+  | { name: 'battle' }
   | { name: 'credits' }
   | { name: 'puzzles'; query: string }
   | { name: 'puzzlePlay'; query: string }
@@ -33,6 +35,7 @@ type Route =
 function readRoute(hash: string): Route {
   const h = hash.replace(/^#\/?/, '')
   if (h === 'sprint') return { name: 'sprint' }
+  if (h === 'battle') return { name: 'battle' }
   if (h === 'learn') return { name: 'learn' }
   if (h === 'credits') return { name: 'credits' }
   const pz = h.match(/^puzzles(\/play)?(?:\?(.*))?$/)
@@ -100,6 +103,8 @@ export default function App() {
       ? t('სწავლა', 'Learn')
       : route.name === 'sprint'
         ? t('დროის გამოწვევა', 'Time challenge')
+        : route.name === 'battle'
+          ? t('კლასის შეჯიბრი', 'Class battle')
         : route.name === 'stage'
           ? tr(route.stage.title)
           : route.name === 'credits'
@@ -167,6 +172,7 @@ export default function App() {
               onFinish={finishChallenge}
             />
           )}
+          {route.name === 'battle' && <Battle set={saved.set} />}
           {route.name === 'credits' && <Credits />}
           {route.name === 'puzzles' && (
             <PuzzlesPage
@@ -337,6 +343,13 @@ function Home({ saved }: { saved: Saved }) {
               {caps(t('2, 5 ან 10 წუთი, ადვილიდან რთულამდე. რეკორდი:', '2, 5 or 10 minutes, easy to hard. Best:'))}{' '}
               {Math.max(0, ...Object.values(saved.challengeBests))}
             </small>
+          </span>
+        </button>
+        <button className="tile learn-tile" onClick={() => go('battle')}>
+          <span className="tile-icon sprint-icon">🏆</span>
+          <span>
+            <strong>{caps(t('კლასის შეჯიბრი', 'Class battle'))}</strong>
+            <small>{caps(t('რიგრიგობით, ერთ ეკრანზე, 30 მოთამაშემდე.', 'Take turns on one screen, up to 30 players.'))}</small>
           </span>
         </button>
       </section>

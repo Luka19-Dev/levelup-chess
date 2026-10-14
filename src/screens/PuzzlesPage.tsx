@@ -9,7 +9,7 @@ import { caps } from '../lib/caps'
 import { t, tr } from '../lib/i18n'
 import type { Txt } from '../lib/i18n'
 
-type Index = Awaited<ReturnType<typeof loadIndex>>
+export type Index = Awaited<ReturnType<typeof loadIndex>>
 type Props = { filter: Filter; set: SetId; onChange: (f: Filter) => void; go: (hash: string) => void }
 
 const SIDES: { v: Filter['side']; name: Txt }[] = [
@@ -37,46 +37,12 @@ export function PuzzlesPage({ filter, set, onChange, go }: Props) {
 
   const mixed: Filter = { ...filter, theme: undefined }
   const n = index ? count(index, mixed) : null
-  const empty = (patch: Partial<Filter>) => index !== null && count(index, { ...mixed, ...patch }) === 0
   const puzzles = (k: number) => `${fmt(k)} ${t('ამოცანა', k === 1 ? 'puzzle' : 'puzzles')}`
 
   return (
     <div className="puzzles-page">
       <section className="filter-card">
-        <RatingRange filter={filter} onChange={onChange} />
-        <Choice label={t('ფერი', 'Side')}>
-          {SIDES.map(({ v, name }) => (
-            <Chip key={v} on={filter.side === v} disabled={empty({ side: v })} onClick={() => onChange({ ...filter, side: v })}>
-              <span className="chip-pieces">
-                {v !== 'b' && <Piece set={set} color="w" type="k" />}
-                {v !== 'w' && <Piece set={set} color="b" type="k" />}
-              </span>
-              {caps(tr(name))}
-            </Chip>
-          ))}
-        </Choice>
-        <Choice label={t('პარტიის ეტაპი', 'Game stage')}>
-          {STAGES.map(({ v, icon, name }) => (
-            <Chip key={v} on={filter.stage === v} disabled={empty({ stage: v })} onClick={() => onChange({ ...filter, stage: v })}>
-              <GameIcon name={icon} className="chip-symbol" />
-              {caps(tr(name))}
-            </Chip>
-          ))}
-        </Choice>
-        <Choice label={t('ფიგურა, რომელიც იგებს', 'The piece that wins')}>
-          <Chip on={filter.piece === 'any'} onClick={() => onChange({ ...filter, piece: 'any' })}>
-            <GameIcon name="stage:mix" className="chip-symbol" />
-            {caps(t('ყველა', 'All'))}
-          </Chip>
-          {PIECES.map((p) => (
-            <Chip key={p} on={filter.piece === p} disabled={empty({ piece: p })} onClick={() => onChange({ ...filter, piece: p })}>
-              <span className="chip-pieces">
-                <Piece set={set} color="w" type={p} />
-              </span>
-              {caps(tr(PIECE_NAME[p]))}
-            </Chip>
-          ))}
-        </Choice>
+        <FilterFields filter={filter} set={set} index={index} onChange={onChange} />
         <div className="start-row">
           <span className="match">{n === null ? '…' : puzzles(n)}</span>
           <button className="primary-btn" disabled={!n} onClick={() => go(`puzzles/play?${toQuery(mixed)}`)}>
@@ -108,6 +74,50 @@ export function PuzzlesPage({ filter, set, onChange, go }: Props) {
         </div>
       </section>
     </div>
+  )
+}
+
+/** The rating slider and the side, game stage and winning piece choices; shared with the class battle lobby. */
+export function FilterFields({ filter, set, index, onChange }: { filter: Filter; set: SetId; index: Index | null; onChange: (f: Filter) => void }) {
+  const mixed: Filter = { ...filter, theme: undefined }
+  const empty = (patch: Partial<Filter>) => index !== null && count(index, { ...mixed, ...patch }) === 0
+  return (
+    <>
+      <RatingRange filter={filter} onChange={onChange} />
+      <Choice label={t('ფერი', 'Side')}>
+        {SIDES.map(({ v, name }) => (
+          <Chip key={v} on={filter.side === v} disabled={empty({ side: v })} onClick={() => onChange({ ...filter, side: v })}>
+            <span className="chip-pieces">
+              {v !== 'b' && <Piece set={set} color="w" type="k" />}
+              {v !== 'w' && <Piece set={set} color="b" type="k" />}
+            </span>
+            {caps(tr(name))}
+          </Chip>
+        ))}
+      </Choice>
+      <Choice label={t('პარტიის ეტაპი', 'Game stage')}>
+        {STAGES.map(({ v, icon, name }) => (
+          <Chip key={v} on={filter.stage === v} disabled={empty({ stage: v })} onClick={() => onChange({ ...filter, stage: v })}>
+            <GameIcon name={icon} className="chip-symbol" />
+            {caps(tr(name))}
+          </Chip>
+        ))}
+      </Choice>
+      <Choice label={t('ფიგურა, რომელიც იგებს', 'The piece that wins')}>
+        <Chip on={filter.piece === 'any'} onClick={() => onChange({ ...filter, piece: 'any' })}>
+          <GameIcon name="stage:mix" className="chip-symbol" />
+          {caps(t('ყველა', 'All'))}
+        </Chip>
+        {PIECES.map((p) => (
+          <Chip key={p} on={filter.piece === p} disabled={empty({ piece: p })} onClick={() => onChange({ ...filter, piece: p })}>
+            <span className="chip-pieces">
+              <Piece set={set} color="w" type={p} />
+            </span>
+            {caps(tr(PIECE_NAME[p]))}
+          </Chip>
+        ))}
+      </Choice>
+    </>
   )
 }
 
@@ -165,7 +175,7 @@ function RatingRange({ filter, onChange }: { filter: Filter; onChange: (f: Filte
   )
 }
 
-function Choice({ label, children }: { label: string; children: ReactNode }) {
+export function Choice({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="choice">
       <span className="label">{caps(label)}</span>
@@ -174,7 +184,7 @@ function Choice({ label, children }: { label: string; children: ReactNode }) {
   )
 }
 
-function Chip(props: { on: boolean; disabled?: boolean; onClick: () => void; children: ReactNode }) {
+export function Chip(props: { on: boolean; disabled?: boolean; onClick: () => void; children: ReactNode }) {
   return (
     <button className={`chip${props.on ? ' on' : ''}`} aria-pressed={props.on} disabled={props.disabled} onClick={props.onClick}>
       {props.children}

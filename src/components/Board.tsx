@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import { PIECE_NAME, Piece } from '../pieces/sets'
 import type { Color, PieceType, SetId } from '../pieces/sets'
@@ -47,6 +47,12 @@ export function Board(props: Props) {
   const boardRef = useRef<HTMLDivElement>(null)
   const [selected, setSelected] = useState<Square | null>(null)
   const [drag, setDrag] = useState<{ from: Square; x: number; y: number; moved: boolean } | null>(null)
+  // the player's own arrows and circles, drawn with the right button as on chess.com
+  const [drawn, setDrawn] = useState<Shape[]>([])
+  const [drawing, setDrawing] = useState<{ from: Square; to: Square; color: string } | null>(null)
+  // a move clears them, as a left click does
+  const moveKey = anim?.key
+  useEffect(() => setDrawn([]), [moveKey])
   const [shaking, setShaking] = useState(false)
   // A dragged piece is already standing where it was dropped, so the slide-in for
   // that one move is skipped. `key` pins the skip to the first animation that
@@ -82,9 +88,26 @@ export function Board(props: Props) {
     return orientation === 'w' ? sq(col, 7 - row) : sq(7 - col, row)
   }
 
+  /** Keeps the pointer's moves coming to the board; a pointer the browser no longer knows makes this throw. */
+  function capture(e: ReactPointerEvent) {
+    try {
+      ;(e.target as Element).setPointerCapture?.(e.pointerId)
+    } catch {
+      /* the moves still arrive while the pointer stays over the board */
+    }
+  }
+
   function down(e: ReactPointerEvent) {
     const s = fromPoint(e.clientX, e.clientY)
     if (!s) return
+    if (e.button === 2) {
+      // orange by default like chess.com; Shift green, Ctrl red, Alt blue
+      const color = e.shiftKey ? 'green' : e.ctrlKey ? 'red' : e.altKey ? 'blue' : 'yellow'
+      setDrawing({ from: s, to: s, color })
+      capture(e)
+      return
+    }
+    setDrawn([])
     if (!movable) {
       onSquare?.(s)
       return
@@ -99,17 +122,32 @@ export function Board(props: Props) {
     if (p && p.color === movable) {
       setSelected(s)
       setDrag({ from: s, x: e.clientX, y: e.clientY, moved: false })
-      ;(e.target as Element).setPointerCapture?.(e.pointerId)
+      capture(e)
     } else {
       setSelected(null)
     }
   }
   function move(e: ReactPointerEvent) {
+    if (drawing) {
+      const s = fromPoint(e.clientX, e.clientY)
+      if (s && s !== drawing.to) setDrawing({ ...drawing, to: s })
+      return
+    }
     if (!drag) return
     const moved = drag.moved || Math.hypot(e.clientX - drag.x, e.clientY - drag.y) > 5
     setDrag({ ...drag, x: e.clientX, y: e.clientY, moved })
   }
   function up(e: ReactPointerEvent) {
+    if (drawing) {
+      const d = drawing
+      setDrawing(null)
+      // a plain right click colours the square itself, as on chess.com
+      const shape: Shape = d.from === d.to ? { square: d.from, color: d.color } : { arrow: d.from + d.to, color: d.color }
+      const same = (x: Shape) => x.arrow === shape.arrow && x.square === shape.square
+      // drawing it again in the same colour takes it away; in another colour, recolours it
+      setDrawn((list) => (list.some((x) => same(x) && x.color === shape.color) ? list.filter((x) => !same(x)) : [...list.filter((x) => !same(x)), shape]))
+      return
+    }
     if (!drag) return
     const s = fromPoint(e.clientX, e.clientY)
     const d = drag
@@ -130,6 +168,8 @@ export function Board(props: Props) {
   const boxRect = boardRef.current?.getBoundingClientRect()
   const cell = boxRect ? boxRect.width / 8 : 0
 
+  const marks: Record<Square, string> = {}
+  for (const x of drawn) if (x.square) marks[x.square] = x.color
   const squares = []
   for (let row = 0; row < 8; row++) {
     for (let col = 0; col < 8; col++) {
@@ -146,6 +186,7 @@ export function Board(props: Props) {
           {col === 0 && <span className="coord rank">{s[1]}</span>}
           {row === 7 && <span className="coord file">{s[0]}</span>}
           {targets.includes(s) && <span className={position[s] ? 'target capture' : 'target'} />}
+          {marks[s] && <span className="mark" style={{ background: MARK_COLOURS[marks[s]] }} />}
           {stars.includes(s) && <span className="star">★</span>}
         </div>,
       )
@@ -159,7 +200,11 @@ export function Board(props: Props) {
       onPointerDown={down}
       onPointerMove={move}
       onPointerUp={up}
-      onPointerCancel={() => setDrag(null)}
+      onPointerCancel={() => {
+        setDrag(null)
+        setDrawing(null)
+      }}
+      onContextMenu={(e) => e.preventDefault()}
     >
       {squares}
       {Object.entries(position).map(([s, p]) => {
@@ -178,10 +223,21 @@ export function Board(props: Props) {
           </PieceAt>
         )
       })}
-      {shapes.length > 0 && <Shapes shapes={shapes} at={toScreen} />}
+      {(shapes.length > 0 || drawn.some((x) => !x.square) || drawing) && (
+        <Shapes
+          shapes={[...shapes, ...drawn.filter((x) => !x.square), ...(drawing && drawing.to !== drawing.from ? [{ arrow: drawing.from + drawing.to, color: drawing.color }] : [])]}
+          at={toScreen}
+        />
+      )}
       {promotion && (
         // on the board itself, so a phone never has to scroll to find it; a tap beside it cancels
-        <div className="promo-shade" onPointerDown={(e) => { e.stopPropagation(); promotion.onCancel() }}>
+        <div
+          className="promo-shade"
+          onPointerDown={(e) => {
+            e.stopPropagation()
+            if (e.button === 0) promotion.onCancel()
+          }}
+        >
           {PROMOTE_TO.map((type, i) => {
             const [col, row] = toScreen(promotion.to)
             return (
@@ -232,7 +288,16 @@ function PieceAt(props: { col: number; row: number; dragging: boolean; animFrom:
   )
 }
 
-export type Shape = { arrow?: string; circle?: string; color: string }
+/** arrow 'e2e4' or circle 'e4' (lesson hints); square 'e4' = a right-clicked square, coloured under the piece */
+export type Shape = { arrow?: string; circle?: string; square?: string; color: string }
+
+// chess.com-like highlight fills: orange by default
+const MARK_COLOURS: Record<string, string> = {
+  yellow: 'rgba(240, 130, 30, 0.8)',
+  green: 'rgba(40, 170, 60, 0.75)',
+  red: 'rgba(220, 50, 50, 0.75)',
+  blue: 'rgba(40, 110, 230, 0.75)',
+}
 
 const SHAPE_COLOURS: Record<string, string> = { green: '#15781b', red: '#882020', yellow: '#e68f00', blue: '#003088' }
 
@@ -256,11 +321,27 @@ function Shapes({ shapes, at }: { shapes: Shape[]; at: (s: Square) => number[] }
         const f = at(sh.arrow!.slice(0, 2))
         const t = at(sh.arrow!.slice(2, 4))
         const [x1, y1, x2, y2] = [f[0] + 0.5, f[1] + 0.5, t[0] + 0.5, t[1] + 0.5]
-        const len = Math.hypot(x2 - x1, y2 - y1)
+        const head = `url(#head-${sh.color in SHAPE_COLOURS ? sh.color : 'green'})`
+        const [dx, dy] = [Math.abs(x2 - x1), Math.abs(y2 - y1)]
+        // a knight's jump bends like an L, as on chess.com: the two-square leg first, then the turn
+        const knight = (dx === 1 && dy === 2) || (dx === 2 && dy === 1)
+        const [cx, cy] = knight ? (dx === 2 ? [x2, y1] : [x1, y2]) : [x1, y1]
+        const len = Math.hypot(x2 - cx, y2 - cy)
         // stop short so the head lands inside the target square
-        const ex = x2 - ((x2 - x1) / len) * 0.3
-        const ey = y2 - ((y2 - y1) / len) * 0.3
-        return <line key={i} x1={x1} y1={y1} x2={ex} y2={ey} stroke={colour} strokeWidth="0.16" strokeLinecap="round" markerEnd={`url(#head-${sh.color in SHAPE_COLOURS ? sh.color : 'green'})`} />
+        const ex = x2 - ((x2 - cx) / len) * 0.3
+        const ey = y2 - ((y2 - cy) / len) * 0.3
+        return (
+          <path
+            key={i}
+            d={knight ? `M${x1} ${y1}L${cx} ${cy}L${ex} ${ey}` : `M${x1} ${y1}L${ex} ${ey}`}
+            fill="none"
+            stroke={colour}
+            strokeWidth="0.16"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            markerEnd={head}
+          />
+        )
       })}
     </svg>
   )

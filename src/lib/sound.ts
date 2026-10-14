@@ -76,6 +76,33 @@ export const sfx = {
   right() {
     play([['puzzle-correct-2']])
   },
+  /**
+   * A right move in a puzzle that is not over yet: a soft rising two-note chime, drawn here
+   * rather than taken from a sound set, so it is our own.
+   */
+  keepGoing() {
+    if (!enabled) return
+    const c = context()
+    if (!c) return
+    if (c.state === 'suspended') void c.resume()
+    const notes: [hz: number, at: number][] = [
+      [784, 0.06],
+      [1175, 0.15],
+    ]
+    for (const [hz, at] of notes) {
+      const t = c.currentTime + at
+      const osc = c.createOscillator()
+      const gain = c.createGain()
+      osc.type = 'sine'
+      osc.frequency.value = hz
+      gain.gain.setValueAtTime(0.0001, t)
+      gain.gain.exponentialRampToValueAtTime(0.16, t + 0.012)
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.32)
+      osc.connect(gain).connect(c.destination)
+      osc.start(t)
+      osc.stop(t + 0.34)
+    }
+  },
   wrong() {
     play([['illegal']])
   },

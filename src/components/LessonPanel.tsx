@@ -40,7 +40,8 @@ export function LessonPanel(props: { stage: Stage; set: SetId; goal: GoalState; 
           tr(goal.text)
         )}
       </div>
-      <div className="tabs" role="tablist">
+      {/* at most 10 a row: a 20-puzzle stage gets two rows */}
+      <div className="tabs" role="tablist" style={{ gridTemplateColumns: `repeat(${Math.min(count, 10)}, 1fr)` }}>
         {Array.from({ length: count }, (_, i) => {
           const got = results[i] ?? 0
           return (

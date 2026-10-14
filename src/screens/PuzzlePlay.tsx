@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { PuzzleRunner } from '../components/PuzzleRunner'
 import type { Puzzle } from '../components/PuzzleRunner'
-import { GameIcon } from '../components/StageIcon'
+import { GameIcon, SkipIcon } from '../components/StageIcon'
 import { PRAISE } from '../components/LessonPanel'
 import type { GoalState } from '../components/LessonPanel'
 import type { SetId } from '../pieces/sets'
@@ -19,7 +19,6 @@ export function PuzzlePlay({ filter, set, go }: { filter: Filter; set: SetId; go
   const [at, setAt] = useState(0)
   const [goal, setGoal] = useState<GoalState>({ kind: 'goal', text: { ka: '', en: '' } })
   const [tally, setTally] = useState({ clean: 0, helped: 0 })
-  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   // keyed on the filter's text, not the object: App builds a fresh object on every render
   // (opening the settings, switching theme), and a fresh shuffle would swap the puzzle mid-solve
@@ -34,13 +33,11 @@ export function PuzzlePlay({ filter, set, go }: { filter: Filter; set: SetId; go
     )
     return () => {
       live = false
-      clearTimeout(timer.current)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, attempt])
 
   function next() {
-    clearTimeout(timer.current)
     setGoal({ kind: 'goal', text: { ka: '', en: '' } })
     setAt((i) => i + 1)
   }
@@ -102,7 +99,6 @@ export function PuzzlePlay({ filter, set, go }: { filter: Filter; set: SetId; go
           burst()
           setGoal({ kind: 'success', stars })
           setTally((x) => (slips ? { ...x, helped: x.helped + 1 } : { ...x, clean: x.clean + 1 }))
-          timer.current = setTimeout(next, 1500)
         }}
         bottom={
           <span className="muted">
@@ -110,11 +106,9 @@ export function PuzzlePlay({ filter, set, go }: { filter: Filter; set: SetId; go
           </span>
         }
         actions={
-          <button className="ghost-btn icon-label" onClick={next}>
-            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-              <path d="M5 5.5v13L15 12z" fill="currentColor" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
-              <path d="M18.5 5.5v13" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
-            </svg>
+          // a solved puzzle stays on the board until the class moves on (the teacher's ask)
+          <button className={`${goal.kind === 'success' ? 'primary-btn' : 'ghost-btn'} icon-label`} onClick={next}>
+            <SkipIcon />
             {caps(goal.kind === 'success' ? t('შემდეგი', 'Next') : t('გამოტოვება', 'Skip'))}
           </button>
         }
