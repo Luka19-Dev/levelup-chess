@@ -107,7 +107,7 @@ export function PuzzlePlay({ filter, set, go }: { filter: Filter; set: SetId; go
         }
         actions={
           // a solved puzzle stays on the board until the class moves on (the teacher's ask)
-          <button className={`${goal.kind === 'success' ? 'primary-btn' : 'ghost-btn'} icon-label`} onClick={next}>
+          <button className={`${goal.kind === 'success' ? 'primary-btn next-btn' : 'ghost-btn'} icon-label`} onClick={next}>
             <SkipIcon />
             {caps(goal.kind === 'success' ? t('შემდეგი', 'Next') : t('გამოტოვება', 'Skip'))}
           </button>

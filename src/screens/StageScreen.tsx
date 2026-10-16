@@ -90,7 +90,7 @@ export function StageScreen({ stage, level, set, learn, onResult, go }: Props) {
             }}
             actions={
               puzzleGoal.kind === 'success' && (
-                <button className="primary-btn icon-label" onClick={advance}>
+                <button className="primary-btn icon-label next-btn" onClick={advance}>
                   <SkipIcon />
                   {caps(t('შემდეგი', 'Next'))}
                 </button>

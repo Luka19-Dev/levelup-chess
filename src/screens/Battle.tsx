@@ -352,7 +352,7 @@ function Turn({ game, set, onChange }: { game: Game; set: SetId; onChange: (g: G
         }
         actions={
           earned !== null && (
-            <button className="primary-btn icon-label" onClick={next}>
+            <button className="primary-btn icon-label next-btn" onClick={next}>
               <SkipIcon />
               {caps(!lastOfTurn ? t('შემდეგი', 'Next') : lastPlayer ? t('შედეგები', 'Results') : t('შემდეგი მოთამაშე', 'Next player'))}
             </button>
