@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Board } from './Board'
+import { useMoveHistory } from './MoveNav'
 import type { Position, Shape } from './Board'
 import type { SetId } from '../pieces/sets'
 import { isPromotion, load, opponentMove, opponentToMove, play, score, start, targets } from '../lib/lesson'
@@ -17,14 +18,17 @@ type Props = {
   set: SetId
   /** renders the panel top for the current goal state */
   panel: (goal: GoalState) => ReactNode
-  onDone: (stars: number) => void
+  /** the winning move, at once: the stars are kept even if the player leaves before the next level opens */
+  onSolved: (stars: number) => void
+  /** a moment later, once the success has been seen */
+  onDone: () => void
 }
 
 const OPPONENT_DELAY = 900
 const RESTART_DELAY = 1800
 
 /** One lesson board: runs a lichess level through the rules engine and reports the stars earned. */
-export function LessonPlay({ level, set, panel, onDone }: Props) {
+export function LessonPlay({ level, set, panel, onSolved, onDone }: Props) {
   const player = level.color === 'white' ? 'w' : 'b'
   const [state, setState] = useState<State>(() => start(level))
   const [goal, setGoal] = useState<GoalState>({ kind: 'goal', text: GOALS[level.goal] })
@@ -34,12 +38,16 @@ export function LessonPlay({ level, set, panel, onDone }: Props) {
   const [last, setLast] = useState<[string, string] | null>(null)
   const [shake, setShake] = useState(0)
   const [promo, setPromo] = useState<{ from: string; to: string } | null>(null)
+  // every position played so far, to step back and forth through (the arrow keys too, not while picking a promotion)
+  const moves = useMoveHistory(state, !promo)
   const timers = useRef<ReturnType<typeof setTimeout>[]>([])
   const later = (fn: () => void, ms: number) => timers.current.push(setTimeout(fn, ms))
 
-  function slide(from: string, to: string) {
+  /** A move on the board: it slides in and joins the history, `s` being the position after it. */
+  function slide(from: string, to: string, s: State) {
     setAnim({ from, to, key: Date.now() })
     setLast([from, to])
+    moves.push(s, [from, to])
   }
 
   /** The scripted opponent plays its next move, if one is due. */
@@ -53,7 +61,7 @@ export function LessonPlay({ level, set, panel, onDone }: Props) {
       const r = opponentMove(level, s)
       if (r.move) {
         sfx.play({ opponent: true, capture: !!r.move.captured })
-        slide(r.move.from, r.move.to)
+        slide(r.move.from, r.move.to, r.state)
       }
       setState(r.state)
       if (r.shapes) setShapes(r.shapes)
@@ -71,6 +79,7 @@ export function LessonPlay({ level, set, panel, onDone }: Props) {
     setAnim(null)
     setLast(null)
     setPromo(null)
+    moves.reset(s)
     opponent(s)
   }
 
@@ -102,7 +111,7 @@ export function LessonPlay({ level, set, panel, onDone }: Props) {
         return
       }
       setState(out.state)
-      slide(from, to)
+      slide(from, to, out.state)
       if (out.why === 'capture' && out.capture) {
         const cap = out.capture
         setGoal({ kind: 'fail', text: { ka: 'მოწინააღმდეგე შენს ფიგურას აიყვანდა! სცადე თავიდან.', en: 'The opponent would take your piece! Try again.' } })
@@ -115,7 +124,7 @@ export function LessonPlay({ level, set, panel, onDone }: Props) {
     const m = out.move
     const collected = out.state.apples.length < state.apples.length
     setState(out.state)
-    slide(from, to)
+    slide(from, to, out.state)
     setShapes([])
     if (out.kind === 'success') {
       // the winning move is silent so the success sound plays on its own
@@ -124,7 +133,8 @@ export function LessonPlay({ level, set, panel, onDone }: Props) {
       setBusy(true)
       burst()
       sfx.right()
-      later(() => onDone(stars), 1300)
+      onSolved(stars)
+      later(onDone, 1300)
       return
     }
     if (collected) sfx.star()
@@ -138,10 +148,13 @@ export function LessonPlay({ level, set, panel, onDone }: Props) {
     else apply(play(level, state, from, to), from, to)
   }
 
+  // the position on the board: the live one, or an earlier one while looking back
+  const live = moves.shown === null
+  const shown = moves.shown ?? state
   // stars are shown as stars, not as the pawns that stand underneath them
   const position: Position = {}
-  for (const row of load(state.fen).board())
-    for (const p of row) if (p && !state.apples.includes(p.square)) position[p.square] = { type: p.type, color: p.color }
+  for (const row of load(shown.fen).board())
+    for (const p of row) if (p && !shown.apples.includes(p.square)) position[p.square] = { type: p.type, color: p.color }
 
   const finished = goal.kind === 'success'
   const myTurn = load(state.fen).turn() === player
@@ -152,16 +165,17 @@ export function LessonPlay({ level, set, panel, onDone }: Props) {
         position={position}
         orientation={player}
         set={set}
-        movable={!busy && !finished && !promo && myTurn ? player : null}
+        movable={!busy && !finished && !promo && live && myTurn ? player : null}
         legalFrom={(from) => targets(level, state, from)}
         onMove={onMove}
-        lastMove={last}
-        anim={anim}
-        stars={state.apples}
-        shapes={shapes}
+        lastMove={live ? last : moves.lastMove}
+        anim={moves.anim(anim)}
+        stars={shown.apples}
+        // the hint arrows belong to the live position
+        shapes={live ? shapes : []}
         shakeKey={shake}
         promotion={
-          promo && {
+          promo && live ? {
             to: promo.to,
             color: player,
             onPick: (p) => {
@@ -170,11 +184,12 @@ export function LessonPlay({ level, set, panel, onDone }: Props) {
               apply(play(level, state, from, to, p), from, to)
             },
             onCancel: () => setPromo(null),
-          }
+          } : null
         }
       />
       <aside className="panel">
         {panel(goal)}
+        {moves.nav}
         <div className="controls">
           {level.nbMoves > 1 && (
             <span className="muted">

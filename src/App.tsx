@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { stageByKey } from './data/learn'
 import type { Stage } from './data/learn'
 import { load, save } from './lib/storage'
@@ -6,7 +6,7 @@ import type { Saved } from './lib/storage'
 import { setSound } from './lib/sound'
 import { overall } from './lib/progress'
 import { Piece } from './pieces/sets'
-import { GameIcon } from './components/StageIcon'
+import { BackIcon, GameIcon } from './components/StageIcon'
 import { Picker } from './components/Picker'
 import { PIECE_SETS, boardById, boardsInOrder } from './pieces/catalog'
 import type { PieceType } from './pieces/sets'
@@ -60,14 +60,23 @@ export default function App() {
   // the language is set before anything renders, so every t() below reads it
   setLang(saved.lang)
 
+  // a new page starts at the top. The jump waits until the new page is drawn but not yet
+  // shown: done at once, the old page flashed at its top first (seen on an iPhone, coming
+  // from far down the learn map). Filter tweaks replace the hash without an event, so they keep their place.
+  const toTop = useRef(false)
   useEffect(() => {
     const on = () => {
+      toTop.current = true
       setHash(location.hash)
-      window.scrollTo(0, 0)
     }
     window.addEventListener('hashchange', on)
     return () => window.removeEventListener('hashchange', on)
   }, [])
+  useLayoutEffect(() => {
+    if (!toTop.current) return
+    toTop.current = false
+    window.scrollTo(0, 0)
+  }, [hash])
 
   useEffect(() => {
     save(saved)
@@ -84,7 +93,8 @@ export default function App() {
 
   const recordLevel = (stage: Stage, level: number, stars: number) =>
     setSaved((s) => {
-      const list = [...(s.learn[stage.key] ?? [])]
+      // levels skipped over get a 0, so the list never has gaps
+      const list = Array.from({ length: Math.max(level + 1, s.learn[stage.key]?.length ?? 0) }, (_, i) => s.learn[stage.key]?.[i] ?? 0)
       list[level] = Math.max(stars, list[level] ?? 0)
       return { ...s, learn: { ...s.learn, [stage.key]: list } }
     })
@@ -98,6 +108,9 @@ export default function App() {
 
   // back goes one level up: a lesson to the learn overview, a puzzle run to its filters, everything else home
   const back = route.name === 'stage' ? 'learn' : route.name === 'puzzlePlay' ? `puzzles?${route.query}` : ''
+  // a page with a board: on a phone its header keeps to one line (the language button moves to the settings)
+  const onBoard = route.name === 'stage' || route.name === 'puzzlePlay' || route.name === 'sprint' || route.name === 'battle'
+  const backLabel = back === 'learn' ? t('სწავლა', 'Learn') : back ? t('ამოცანები', 'Puzzles') : t('მთავარი', 'Home')
   const title =
     route.name === 'learn'
       ? t('სწავლა', 'Learn')
@@ -117,19 +130,21 @@ export default function App() {
     <>
       {/* the header bar spans the whole window and stays pinned while the page scrolls, as on Lerno */}
       <div className="top-bar">
-        <header className="top page-col">
+        <header className={onBoard ? 'top page-col on-board' : 'top page-col'}>
           {route.name === 'home' ? (
             <span className="brand">{caps(t('ჭადრაკი', 'Chess'))}</span>
           ) : (
-            <button className="back" onClick={() => go(back)}>
-              ← {caps(back === 'learn' ? t('სწავლა', 'Learn') : back ? t('ამოცანები', 'Puzzles') : t('მთავარი', 'Home'))}
+            // on a phone only the arrow shows; the label stays for screen readers
+            <button className="back" onClick={() => go(back)} aria-label={backLabel} title={backLabel}>
+              <BackIcon />
+              <span className="back-label">{caps(backLabel)}</span>
             </button>
           )}
           {title && <h1 className="level-title">{caps(title)}</h1>}
           <div className="top-actions">
             <ThemeSwitch theme={saved.theme} onChange={(theme) => update({ theme })} />
             <button
-              className="ghost-switch"
+              className="ghost-switch lang-btn"
               aria-label={t('ენის შეცვლა', 'Change language')}
               onClick={() => update({ lang: saved.lang === 'ka' ? 'en' : 'ka' })}
             >
@@ -161,7 +176,7 @@ export default function App() {
           {route.name === 'home' && <Home saved={saved} />}
           {route.name === 'learn' && <LearnMap set={saved.set} learn={saved.learn} onReset={() => update({ learn: {} })} go={go} />}
           {route.name === 'stage' && (
-            <StageScreen key={route.stage.key} stage={route.stage} level={route.level} set={saved.set} learn={saved.learn} onResult={recordLevel} go={go} />
+            <StageScreen key={route.stage.key} stage={route.stage} level={route.level} set={saved.set} learn={saved.learn} onResult={recordLevel} autoNext={saved.autoNext} onAutoNext={(autoNext) => update({ autoNext })} go={go} />
           )}
           {route.name === 'sprint' && (
             <Sprint
@@ -187,7 +202,7 @@ export default function App() {
               go={go}
             />
           )}
-          {route.name === 'puzzlePlay' && <PuzzlePlay key={route.query} filter={fromQuery(route.query, saved.puzzles)} set={saved.set} go={go} />}
+          {route.name === 'puzzlePlay' && <PuzzlePlay key={route.query} filter={fromQuery(route.query, saved.puzzles)} set={saved.set} autoNext={saved.autoNext} onAutoNext={(autoNext) => update({ autoNext })} go={go} />}
         </main>
 
         {settings && (
@@ -231,6 +246,14 @@ export default function App() {
                   ),
                 }))}
               />
+              <p className="label">{caps(t('ენა', 'Language'))}</p>
+              <div className="chips">
+                {(['ka', 'en'] as const).map((l) => (
+                  <button key={l} className={`chip${saved.lang === l ? ' on' : ''}`} aria-pressed={saved.lang === l} onClick={() => update({ lang: l })}>
+                    {l === 'ka' ? 'ქართული' : 'English'}
+                  </button>
+                ))}
+              </div>
               <label className="toggle">
                 <input type="checkbox" checked={saved.sound} onChange={(e) => update({ sound: e.target.checked })} />
                 {t('ხმა', 'Sound')}
@@ -356,7 +379,7 @@ function Home({ saved }: { saved: Saved }) {
       <footer className="foot">
         <p>
           {t('', 'A free social project by ')}
-          <a href="https://lvlup.ge">LevelUp Georgia</a>
+          <a href="https://lvlup.ge" target="_blank" rel="noopener">LevelUp Georgia</a>
           {t('-ს სოციალური პროექტი. უფასოა.', '.')}
         </p>
       </footer>

@@ -8,6 +8,7 @@ import { MAX_PER, MAX_PLAYERS, SOLUTION_AFTER, fmtScore, loadBattle, points, sav
 import type { Game, Lobby } from '../lib/battle'
 import { bigCelebration, burst } from '../lib/celebrate'
 import { sfx } from '../lib/sound'
+import { track } from '../lib/stats'
 import { caps } from '../lib/caps'
 import { t, tr } from '../lib/i18n'
 import { Chip, Choice, FilterFields } from './PuzzlesPage'
@@ -41,7 +42,10 @@ export function Battle({ set }: { set: SetId }) {
 
   if (!game) return <LobbyForm lobby={lobby} set={set} loading={loading} failed={failed} onChange={(l) => setStored((s) => ({ ...s, lobby: l }))} onStart={start} />
   // ended before anyone played: there is nothing to rank, so straight back to the lobby
-  const end = () => setGame(standings(game).length ? { ...game, phase: 'done' } : null)
+  const end = () => {
+    if (standings(game).length) track('battles')
+    setGame(standings(game).length ? { ...game, phase: 'done' } : null)
+  }
   if (game.phase === 'done') return <Results game={game} loading={loading} failed={failed} onAgain={() => start(lobby)} onNew={() => setGame(null)} />
   // the players' list stands beside the board, as lichess's practice list does (below it on a narrow screen)
   return (
@@ -158,8 +162,12 @@ function LobbyForm(props: { lobby: Lobby; set: SetId; loading: boolean; failed: 
               aria-label={t('მოთამაშის სახელი', "Player's name")}
               onChange={(e) => setName(e.target.value)}
             />
-            <button className="primary-btn" type="submit" disabled={!name.trim() || full}>
-              {caps(t('დამატება', 'Add'))}
+            {/* on a narrow phone only the plus shows, so the name field keeps its room */}
+            <button className="primary-btn icon-label add-btn" type="submit" disabled={!name.trim() || full} aria-label={t('დამატება', 'Add')}>
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                <path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" />
+              </svg>
+              <span className="add-label">{caps(t('დამატება', 'Add'))}</span>
             </button>
           </form>
           {players.length > 0 && (
@@ -288,7 +296,10 @@ function Turn({ game, set, onChange }: { game: Game; set: SetId; onChange: (g: G
     const moved = { ...game, slips: undefined }
     if (!lastOfTurn) onChange({ ...moved, at: game.at + 1 })
     else if (!lastPlayer) onChange({ ...moved, turn: game.turn + 1, at: 0, phase: 'handoff' })
-    else onChange({ ...moved, phase: 'done' })
+    else {
+      track('battles')
+      onChange({ ...moved, phase: 'done' })
+    }
   }
   // a reload after a puzzle was scored must not open it again for a second try: move on
   useEffect(() => {

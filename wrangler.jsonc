@@ -1,0 +1,17 @@
+// Cloudflare Pages settings for chess.lvlup.ge. Deploy: npm run build, then
+// npx wrangler pages deploy dist --project-name=kai-chess --branch=main
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "kai-chess",
+  "pages_build_output_dir": "dist",
+  "compatibility_date": "2026-10-01",
+  // daily usage totals, see functions/api/ping.ts
+  "d1_databases": [
+    {
+      "binding": "STATS",
+      "database_name": "kai-chess-stats",
+      "database_id": "f3bc4ede-275e-4aa4-a5a6-fedf3d6e3607",
+      "migrations_dir": "migrations"
+    }
+  ]
+}

@@ -181,6 +181,8 @@ export function Board(props: Props) {
       if (activeSel === s) cls.push('sel')
       if (hint === s) cls.push('hint')
       if (check === s) cls.push('check')
+      // a piece the player may move: touching it drags it instead of scrolling the page
+      if (movable && position[s]?.color === movable) cls.push('own')
       squares.push(
         <div key={s} className={cls.join(' ')} style={{ left: `${col * 12.5}%`, top: `${row * 12.5}%` }}>
           {col === 0 && <span className="coord rank">{s[1]}</span>}

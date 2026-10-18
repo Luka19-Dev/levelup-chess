@@ -136,6 +136,9 @@ main {
   font-size: 1.25rem;
 }
 .back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   background: none;
   border: 1px solid var(--line);
   border-radius: 999px;
@@ -144,12 +147,19 @@ main {
   /* one line even on a 320px phone */
   white-space: nowrap;
 }
-@media (max-width: 380px) {
-  .back {
-    padding: 6px 10px;
-    font-size: 0.85rem;
+/* on a phone the back button is the arrow alone (his call): round, like the header's icon buttons */
+@media (max-width: 899px) and (orientation: portrait), (max-width: 899px) and (min-height: 521px), (orientation: landscape) and (max-height: 520px) {
+  .back .back-label {
+    display: none;
   }
-  /* the longest back label („← ამოცანები") and the three header buttons share 272px */
+  .back {
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+  }
+}
+@media (max-width: 380px) {
   .top {
     column-gap: 6px;
   }
@@ -251,7 +261,9 @@ main {
   border-radius: 8px;
   overflow: hidden;
   box-shadow: var(--shadow);
-  touch-action: none;
+  /* a finger on the board scrolls the page up and down (on a phone it is nearly the whole
+     width), except from a square holding a piece the player may move: that one drags */
+  touch-action: pan-y;
   user-select: none;
   -webkit-user-select: none;
 }
@@ -360,6 +372,9 @@ main {
 @keyframes bob {
   50% { transform: translateY(-4px) scale(1.06); }
 }
+.sq.own {
+  touch-action: none;
+}
 .pc {
   position: absolute;
   width: 12.5%;
@@ -429,7 +444,7 @@ main {
 }
 /* on a phone: the colour square, then the text, always two lines tall,
    so the rows under the board stay put whatever the message says */
-@media (max-width: 899px) {
+@media (max-width: 899px) and (orientation: portrait), (max-width: 899px) and (min-height: 521px) {
   .message {
     display: grid;
     grid-template-columns: auto 1fr;
@@ -480,14 +495,14 @@ main {
   flex-shrink: 0;
 }
 /* a touch smaller on a phone, so both fit side by side from 390px */
-@media (max-width: 899px) {
+@media (max-width: 899px) and (orientation: portrait), (max-width: 899px) and (min-height: 521px) {
   .actions button {
     font-size: 0.9rem;
   }
 }
 /* on a phone the board fills the screen, so once a puzzle is solved its Next button
    waits pinned to the bottom of the screen instead of below the fold */
-@media (max-width: 899px) {
+@media (max-width: 899px) and (orientation: portrait), (max-width: 899px) and (min-height: 521px) {
   .actions .next-btn {
     position: fixed;
     left: 0;
@@ -679,6 +694,62 @@ main {
   accent-color: var(--accent);
 }
 
+/* chess.com's four buttons for stepping through the moves, under the turn line */
+.move-nav {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  width: min(100%, 64vh, 560px);
+}
+.move-nav button {
+  display: flex;
+  justify-content: center;
+  padding: 6px 0;
+}
+/* the auto-next switch: a sliding pill, blue when on */
+.switch {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+.switch input {
+  appearance: none;
+  flex: none;
+  position: relative;
+  width: 38px;
+  height: 22px;
+  margin: 0;
+  border-radius: 11px;
+  background: var(--line);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.switch input::before {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  transition: transform 0.15s;
+}
+.switch input:checked {
+  background: var(--accent);
+}
+.switch input:checked::before {
+  transform: translateX(16px);
+}
+.switch input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .star,
 .sq.hint::after,
@@ -729,8 +800,10 @@ main {
   box-shadow: 0 5px 0 var(--gold-deep);
 }
 
-/* ---------- wide screens: use the width ---------- */
-@media (min-width: 900px) {
+/* ---------- wide screens: use the width ----------
+   "wide" also covers a phone held sideways (a short landscape screen): there the board
+   goes beside the panel as on a computer, and the stacked phone rules stay off */
+@media (min-width: 900px), (orientation: landscape) and (max-height: 520px) {
   .hero,
   .foot {
     text-align: left;
@@ -751,7 +824,7 @@ main {
 
 /* wide screens, sized like chess.com: the board follows the window height,
    a 360px panel beside it, exactly as tall as the board */
-@media (min-width: 900px) {
+@media (min-width: 900px), (orientation: landscape) and (max-height: 520px) {
   .play {
     /* window height minus the 68px header row, the 20px gap under it and a 16px bottom margin */
     --board: min(calc(100vh - 104px), calc(100vw - 6rem - 392px), 860px);
@@ -1032,6 +1105,21 @@ main {
 .stage-card-modal {
   text-align: center;
 }
+.stage-stars {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0 0 16px;
+}
+.stage-star {
+  font-size: 3rem;
+  line-height: 1;
+  color: #ffc21a;
+  text-shadow: 0 2px 0 #b07a00;
+}
+.stage-stars strong {
+  font-size: 1.4rem;
+}
 .stage-card-modal p {
   margin: 0 0 16px;
 }
@@ -1050,7 +1138,7 @@ main {
 }
 /* on a phone the goal box above the board keeps the height of its green "solved" state,
    so turning green never pushes the board down */
-@media (max-width: 899px) {
+@media (max-width: 899px) and (orientation: portrait), (max-width: 899px) and (min-height: 521px) {
   .panel .goal {
     min-height: 106px;
     display: flex;
@@ -1058,9 +1146,93 @@ main {
     justify-content: center;
   }
 }
+/* everywhere but an upright phone the title box keeps its own row and the tally stays at the
+   bottom of the panel, as one line */
+.head-row {
+  display: contents;
+}
+.head-tally {
+  display: none;
+}
+.tally span + span::before {
+  content: ' · ';
+}
 /* a box that only appears when a puzzle is solved goes under the board, so the board never moves */
 .panel .goal.under {
   order: 0;
+}
+/* on an upright phone the blue header above the board is a slim bar, and the solved box under
+   the board a size smaller, so the move buttons stay in view next to the pinned Next button */
+@media (max-width: 899px) and (orientation: portrait), (max-width: 899px) and (min-height: 521px) {
+  .panel-head {
+    gap: 10px;
+    padding: 8px 14px;
+  }
+  .panel-head h2 {
+    font-size: 1.1rem;
+  }
+  .panel-head p {
+    font-size: 0.8rem;
+  }
+  .panel-icon .piece-svg,
+  .panel-icon svg {
+    width: 34px;
+    height: 34px;
+  }
+  .panel .goal.under {
+    padding: 8px 12px;
+  }
+  .panel .goal.under strong {
+    font-size: 1.05rem;
+  }
+  .panel-head .battle-icon {
+    font-size: 1.5rem;
+  }
+  /* the puzzles page: title box on the left, the tally on its right, as wide as the board */
+  .panel .head-row {
+    order: -1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: min(100%, 64vh, 560px);
+  }
+  /* on the narrowest phones the title box gives way (its rating line wraps), the tally keeps its size */
+  .panel .head-row .panel-head {
+    min-width: 0;
+  }
+  .head-tally {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    margin: 0;
+    font-size: 0.85rem;
+    text-align: right;
+  }
+  .controls .tally {
+    display: none;
+  }
+  /* the narrowest phones (320): a touch smaller, so the title and the tally still share the row */
+  @media (max-width: 359px) {
+    .panel .head-row {
+      gap: 8px;
+    }
+    .panel .head-row .panel-head {
+      gap: 8px;
+      padding: 8px 10px;
+    }
+    .panel .head-row .panel-head h2 {
+      font-size: 0.95rem;
+    }
+    .head-tally {
+      font-size: 0.75rem;
+    }
+  }
+  /* once solved, the green box already says it: the turn line ("შესანიშნავია!" again) steps aside */
+  .panel:has(.goal.under) .message.solved {
+    display: none;
+  }
 }
 
 @media (min-width: 700px) {
@@ -1068,7 +1240,7 @@ main {
     grid-template-columns: 1fr 1fr;
   }
 }
-@media (min-width: 900px) {
+@media (min-width: 900px), (orientation: landscape) and (max-height: 520px) {
   .learn-map {
     grid-template-columns: 242px 1fr;
     gap: 28px;
@@ -1097,6 +1269,14 @@ main {
   .panel .controls {
     margin-top: auto;
   }
+  /* the move buttons sit right above the controls, both at the bottom of the panel */
+  .panel .move-nav {
+    width: 100%;
+    margin-top: auto;
+  }
+  .panel .move-nav + .controls {
+    margin-top: 0;
+  }
 }
 @media (min-width: 1200px) {
   .stage-page {
@@ -1107,6 +1287,14 @@ main {
   }
   .stage-page .play {
     --board: min(calc(100vh - 104px), calc(100vw - 6rem - 392px - 302px), 860px);
+  }
+  /* board pages without a side list (puzzles, time challenge) keep the board where the class
+     battle has it: the list's 270px and its 32px gap stay empty on the left */
+  .play:not(.stage-page .play) {
+    --board: min(calc(100vh - 104px), calc(100vw - 6rem - 392px - 302px), 860px);
+    margin-left: 302px;
+    width: auto;
+    align-self: flex-start;
   }
   .stage-menu {
     display: block;
@@ -1128,6 +1316,7 @@ main {
     padding: 12px 16px;
   }
   .menu-back {
+    gap: 8px;
     font-weight: 600;
     border-bottom: 1px solid var(--line);
   }
@@ -1459,8 +1648,9 @@ main {
 .ghost-switch:hover {
   background: var(--bg-2);
 }
-/* on a phone the buttons share the first line and the page title takes its own, centred */
-@media (max-width: 600px) {
+/* on a phone the buttons share the first line and the page title takes its own, centred
+   (sideways there is room for one line, which the landscape layout counts on) */
+@media (max-width: 600px) and (orientation: portrait) {
   .top {
     grid-template-columns: auto 1fr;
     row-gap: 4px;
@@ -1471,6 +1661,23 @@ main {
   .level-title {
     grid-column: 1 / -1;
     grid-row: 2;
+  }
+  /* on a board page the title moves up between the back arrow and the buttons, and the
+     language button waits in the settings, so the board gets the room */
+  .top.on-board {
+    grid-template-columns: auto 1fr auto;
+  }
+  .top.on-board .level-title {
+    grid-column: 2;
+    grid-row: 1;
+    font-size: 1rem;
+    line-height: 1.2;
+  }
+  .top.on-board .top-actions {
+    grid-column: 3;
+  }
+  .top.on-board .lang-btn {
+    display: none;
   }
 }
 .bad-text {
@@ -1653,6 +1860,14 @@ main {
   background: var(--card);
   color: var(--ink);
 }
+@media (max-width: 480px) {
+  .add-btn .add-label {
+    display: none;
+  }
+  .add-btn {
+    padding: 8px 12px;
+  }
+}
 .name-row input:focus {
   outline: none;
   border-color: var(--accent);
@@ -1712,6 +1927,8 @@ main {
 /* two classes beat `.level.sprint-card { display: block }` on wide screens, which dropped the gaps */
 .sprint-card.battle-card {
   display: grid;
+  /* one column as wide as the card: a long name in the table is cut with "…" instead of widening the page */
+  grid-template-columns: minmax(0, 1fr);
   gap: 14px;
   justify-items: center;
 }
@@ -1756,6 +1973,8 @@ main {
   padding: 0;
   width: 100%;
   display: grid;
+  /* rows as wide as the list, so a long name is cut with "…" */
+  grid-template-columns: minmax(0, 1fr);
   gap: 4px;
   text-align: left;
 }
@@ -1788,6 +2007,12 @@ main {
   gap: 16px;
   align-content: start;
   margin-top: 24px;
+}
+/* under the board (below 1200px) the card that changes as you play comes first */
+@media (max-width: 1199px) {
+  .battle-side .live-card {
+    order: -1;
+  }
 }
 .side-card {
   background: var(--card);
@@ -1889,6 +2114,142 @@ main {
   opacity: 0.9;
   white-space: nowrap;
 }
+/* the puzzles page: this session's puzzles, newest first; a row reopens its puzzle */
+.history-list {
+  max-height: 50vh;
+  overflow-y: auto;
+}
+.history-list li {
+  padding: 0;
+}
+.history-list button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 16px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.history-list button:hover {
+  background: var(--bg-2);
+}
+.history-list li.now button {
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+.history-list small {
+  color: var(--muted);
+}
+.history-list li.now small {
+  color: inherit;
+  opacity: 0.9;
+}
+/* a round badge per result, readable on the blue row too */
+.mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  font-size: 0.85rem;
+}
+.mark.clean {
+  background: var(--green);
+  color: #fff;
+}
+.mark.helped {
+  background: var(--gold);
+  color: #fff;
+}
+.mark.skipped {
+  background: var(--line);
+  color: var(--ink);
+}
+/* the filters a puzzle set was picked by */
+.filter-rows {
+  margin: 0;
+  padding: 8px 16px;
+}
+.filter-rows div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 0;
+}
+.filter-rows dt {
+  color: var(--muted);
+}
+.filter-rows dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+}
+.side-foot {
+  padding: 4px 16px 14px;
+}
+.side-foot button {
+  width: 100%;
+  justify-content: center;
+}
+/* the time challenge: best scores by difficulty and length, the chosen one outlined */
+.records {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+.records th,
+.records td {
+  padding: 8px 6px;
+  border-top: 1px solid var(--line);
+  text-align: center;
+}
+.records thead th {
+  border-top: 0;
+  color: var(--muted);
+  font-weight: 600;
+}
+.records tbody th {
+  padding-left: 16px;
+  text-align: left;
+  font-weight: 600;
+}
+.records td.now {
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 700;
+}
+/* this run: a tick or a cross per puzzle, as on chess.com's Puzzle Rush */
+.run-marks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 12px 16px;
+  list-style: none;
+}
+.run-marks li {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  color: #fff;
+  font-weight: 700;
+}
+.run-marks .ok {
+  background: var(--green);
+}
+.run-marks .bad {
+  background: var(--bad);
+}
 @media (prefers-reduced-motion: reduce) {
   .table-list li.fresh {
     animation: none;
@@ -1906,4 +2267,122 @@ main {
   background: rgba(255, 255, 255, 0.18);
   font-size: 0.85rem;
   font-weight: 600;
+}
+
+/* ---------- a phone held sideways ----------
+   the header and the gaps shrink, so the board can take the whole height beside the panel */
+@media (orientation: landscape) and (max-height: 520px) {
+  :root {
+    --header-h: 48px;
+  }
+  .top {
+    min-height: 48px;
+    padding: 4px 0;
+  }
+  main {
+    padding-top: 8px;
+  }
+  /* the narrow gutters of a phone, not a computer's 3rem */
+  .app,
+  .page-col {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+  .app:has(.play) {
+    padding-bottom: 8px;
+  }
+  .play {
+    /* window height minus the 48px header, the 8px gap under it and an 8px bottom margin;
+       the panel gets what is left, 240-340px */
+    --board: min(calc(100vh - 64px), calc(100vw - 3rem - 256px), 860px);
+    grid-template-columns: var(--board) minmax(240px, 340px);
+    column-gap: 16px;
+    justify-content: center;
+  }
+  /* the panel keeps to the board's height and scrolls inside if it has to */
+  .panel {
+    gap: 8px;
+    padding: 12px;
+    max-height: var(--board);
+    overflow-y: auto;
+  }
+  /* a tactics stage repeats its stage's one-line goal on every level (it was on the stage's
+     opening card): on a sideways phone it gives way to the level tabs, until a solve turns it green */
+  .tactics-page .panel .goal:not(.success) {
+    display: none;
+  }
+  /* nothing in it is squeezed to fit (the level tabs collapsed to a line): it scrolls instead */
+  .panel > * {
+    flex-shrink: 0;
+  }
+  .panel .panel-head {
+    margin: -12px -12px 0;
+  }
+  .panel .goal,
+  .panel .tabs {
+    margin: -8px -12px 0;
+  }
+  /* everything in the panel a size smaller, so hint and skip stay in view */
+  .panel-head {
+    gap: 10px;
+    padding: 8px 12px;
+  }
+  .panel-head h2 {
+    font-size: 1.1rem;
+  }
+  .panel-head p {
+    font-size: 0.8rem;
+  }
+  .panel-icon .piece-svg,
+  .panel-icon svg {
+    width: 36px;
+    height: 36px;
+  }
+  .panel .goal {
+    padding: 8px 10px;
+    font-size: 0.85rem;
+  }
+  /* the solved box on one line: praise, then the stars */
+  .panel .goal.success {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    column-gap: 10px;
+    padding: 6px 10px;
+  }
+  .goal.success strong {
+    display: inline;
+    font-size: 1rem;
+  }
+  .panel .goal-stars {
+    font-size: 1.1rem;
+    letter-spacing: 2px;
+  }
+  .tab {
+    padding: 4px 0;
+  }
+  .message {
+    min-height: 32px;
+    font-size: 0.9rem;
+  }
+  .move-nav button {
+    padding: 3px 0;
+  }
+  .controls {
+    gap: 6px;
+    font-size: 0.8rem;
+  }
+  /* hint and skip side by side */
+  .actions {
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .actions button {
+    padding: 6px 8px;
+    font-size: 0.8rem;
+  }
+  .switch {
+    font-size: 0.8rem;
+  }
 }

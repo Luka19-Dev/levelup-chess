@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { Chess } from 'chess.js'
 import type { Square as CSquare } from 'chess.js'
 import { Board } from './Board'
+import { useMoveHistory } from './MoveNav'
 import type { Position, Square } from './Board'
 import type { Color, SetId } from '../pieces/sets'
 import { sfx } from '../lib/sound'
@@ -33,6 +34,8 @@ type Props = {
   start?: { mistakes: number; hints: number }
   /** called each time the solver asks for a hint */
   onHint?: () => void
+  /** shown at the very bottom of the side panel, e.g. the auto-next switch */
+  footer?: ReactNode
 }
 
 function toPosition(c: Chess): Position {
@@ -47,7 +50,7 @@ function kingInCheck(c: Chess): Square | null {
   return null
 }
 
-export function PuzzleRunner({ puzzle, set, mode, onSolved, onFailed, onMistake, top, bottom, actions, solutionAfter, onRevealed, onHint, start }: Props) {
+export function PuzzleRunner({ puzzle, set, mode, onSolved, onFailed, onMistake, top, bottom, actions, solutionAfter, onRevealed, onHint, start, footer }: Props) {
   const game = useRef(new Chess(puzzle.fen))
   const [, redraw] = useState(0)
   const [step, setStep] = useState(0)
@@ -68,6 +71,11 @@ export function PuzzleRunner({ puzzle, set, mode, onSolved, onFailed, onMistake,
   const startAt = useRef(start)
   startAt.current = start
   const animKey = useRef(1)
+  const panelRef = useRef<HTMLElement>(null)
+  // every position played so far, to step back and forth through (the arrow keys too, not while picking a promotion)
+  const moves = useMoveHistory(puzzle.fen, !promo)
+  const history = useRef(moves)
+  history.current = moves
 
   /**
    * `sound`: 'none' for the winning move, which lets the success sound play alone;
@@ -86,6 +94,7 @@ export function PuzzleRunner({ puzzle, set, mode, onSolved, onFailed, onMistake,
     }
     setAnim({ from, to, key: animKey.current++ })
     setLast([from, to])
+    history.current.push(game.current.fen(), [from, to])
     redraw((n) => n + 1)
   }, [])
 
@@ -99,6 +108,7 @@ export function PuzzleRunner({ puzzle, set, mode, onSolved, onFailed, onMistake,
     setHint(null)
     setPromo(null)
     setStatus('waiting')
+    history.current.reset(puzzle.fen)
     redraw((n) => n + 1)
     setPlayer(game.current.turn() === 'w' ? 'b' : 'w')
     const t = setTimeout(() => {
@@ -182,7 +192,16 @@ export function PuzzleRunner({ puzzle, set, mode, onSolved, onFailed, onMistake,
     onHint?.()
   }
 
+  // a panel too short for its contents (a phone held sideways) scrolls inside: once solved, its Next button comes into view
+  useEffect(() => {
+    const el = panelRef.current
+    if (status === 'solved' && el && el.scrollHeight > el.clientHeight) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
+  }, [status])
+
   const c = game.current
+  const live = moves.shown === null
+  // the position on the board: the live game, or an earlier one while looking back
+  const shown = moves.shown === null ? c : new Chess(moves.shown)
   const usable = status === 'yours' || status === 'wrong'
   const message =
     status === 'waiting'
@@ -204,19 +223,19 @@ export function PuzzleRunner({ puzzle, set, mode, onSolved, onFailed, onMistake,
   return (
     <div className="play">
       <Board
-        position={toPosition(c)}
+        position={toPosition(shown)}
         orientation={player}
         set={set}
-        movable={(status === 'yours' || status === 'wrong') && !promo ? player : null}
+        movable={usable && live && !promo ? player : null}
         legalFrom={legalFrom}
         onMove={onMove}
-        lastMove={last}
-        anim={anim}
-        hint={hint}
-        check={kingInCheck(c)}
+        lastMove={live ? last : moves.lastMove}
+        anim={moves.anim(anim)}
+        hint={live ? hint : null}
+        check={kingInCheck(shown)}
         shakeKey={shake}
         promotion={
-          promo && {
+          promo && live ? {
             to: promo.to,
             color: player,
             onPick: (p) => {
@@ -224,15 +243,16 @@ export function PuzzleRunner({ puzzle, set, mode, onSolved, onFailed, onMistake,
               answer(promo.from, promo.to, p)
             },
             onCancel: () => setPromo(null),
-          }
+          } : null
         }
       />
-      <aside className="panel">
+      <aside className="panel" ref={panelRef}>
         {top}
         <div className={`message ${status}`}>
           <span className={`turn-dot ${player}`} />
           {message}
         </div>
+        {moves.nav}
         {(mode === 'learn' || bottom || actions) && (
           <div className="controls">
             {bottom ?? <span />}
@@ -262,7 +282,18 @@ export function PuzzleRunner({ puzzle, set, mode, onSolved, onFailed, onMistake,
             </div>
           </div>
         )}
+        {footer}
       </aside>
     </div>
+  )
+}
+
+/** The switch that sends a solved puzzle straight on to the next one. */
+export function AutoNextSwitch({ on, onChange }: { on: boolean; onChange: (on: boolean) => void }) {
+  return (
+    <label className="switch">
+      <input type="checkbox" role="switch" checked={on} onChange={(e) => onChange(e.target.checked)} />
+      {t('ავტომატური გადასვლა შემდეგზე', 'Go to the next puzzle automatically')}
+    </label>
   )
 }

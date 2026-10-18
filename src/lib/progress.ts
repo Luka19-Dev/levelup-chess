@@ -13,7 +13,8 @@ export function solvedCount(stage: Stage, learn: Record<string, number[]>): numb
 }
 
 export function starsOf(stage: Stage, learn: Record<string, number[]>): number {
-  return (learn[stage.key] ?? []).reduce((a, b) => a + b, 0)
+  // a level skipped over is a gap in the list (null once saved): it counts as no stars
+  return (learn[stage.key] ?? []).reduce((a, b) => a + (b || 0), 0)
 }
 
 export function overall(learn: Record<string, number[]>) {

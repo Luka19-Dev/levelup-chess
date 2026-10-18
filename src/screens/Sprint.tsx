@@ -4,6 +4,7 @@ import type { Puzzle } from '../components/PuzzleRunner'
 import type { SetId } from '../pieces/sets'
 import { burst, bigCelebration } from '../lib/celebrate'
 import { sfx } from '../lib/sound'
+import { track } from '../lib/stats'
 import { DIFFICULTY, RATING_MAX, select } from '../lib/bank'
 import { caps } from '../lib/caps'
 import { t, tr } from '../lib/i18n'
@@ -37,6 +38,8 @@ export function Sprint({ set, choice, bests, onChoose, onFinish }: Props) {
   const [score, setScore] = useState(0)
   const [lives, setLives] = useState(LIVES)
   const [at, setAt] = useState(0)
+  // this run's puzzles so far: true solved, false missed
+  const [marks, setMarks] = useState<boolean[]>([])
   const list = useRef<Puzzle[]>([])
   const advance = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const [ended, setEnded] = useState<'time' | 'lives' | 'out'>('time')
@@ -63,6 +66,7 @@ export function Sprint({ set, choice, bests, onChoose, onFinish }: Props) {
       setEnded(lives <= 0 ? 'lives' : at >= list.current.length ? 'out' : 'time')
       setLastRun({ key: challengeKey(choice), score })
       setPhase('over')
+      track('challenges')
       onFinish(choice, score)
       if (score > best && score > 0) {
         bigCelebration()
@@ -86,6 +90,7 @@ export function Sprint({ set, choice, bests, onChoose, onFinish }: Props) {
     setLives(LIVES)
     setLeft(choice.minutes * 60)
     setAt(0)
+    setMarks([])
     setPhase('run')
     sfx.start()
   }
@@ -147,38 +152,94 @@ export function Sprint({ set, choice, bests, onChoose, onFinish }: Props) {
   const puzzle = list.current[at]
   const mm = Math.floor(Math.max(left, 0) / 60)
   const ss = String(Math.max(left, 0) % 60).padStart(2, '0')
+  // the cards beside the board are laid out like the class battle's
   return (
-    <div className="level">
-      <PuzzleRunner
-        key={puzzle.id}
-        puzzle={puzzle}
-        set={set}
-        mode="sprint"
-        onSolved={() => {
-          burst()
-          setScore((s) => s + 1)
-          advance.current = setTimeout(() => setAt((i) => i + 1), 450)
-        }}
-        onFailed={() => {
-          setLives((l) => l - 1)
-          advance.current = setTimeout(() => setAt((i) => i + 1), 1100)
-        }}
-        top={
-          <div className="sprint-bar">
-            <span className={left <= 15 ? 'clock low' : 'clock'}>
-              {mm}:{ss}
-            </span>
-            <span className="score">{score}</span>
-            <span className="lives" aria-label={`${t('დარჩენილი სიცოცხლე', 'Lives left')}: ${lives}`}>
-              {Array.from({ length: LIVES }, (_, i) => (
-                <span key={i} className={i < lives ? 'life' : 'life lost'}>
-                  ♥
+    <div className="stage-page">
+      <div className="battle-main">
+        <div className="level">
+          <PuzzleRunner
+            key={puzzle.id}
+            puzzle={puzzle}
+            set={set}
+            mode="sprint"
+            onSolved={() => {
+              burst()
+              setScore((s) => s + 1)
+              setMarks((m) => [...m, true])
+              advance.current = setTimeout(() => setAt((i) => i + 1), 450)
+            }}
+            onFailed={() => {
+              setLives((l) => l - 1)
+              setMarks((m) => [...m, false])
+              advance.current = setTimeout(() => setAt((i) => i + 1), 1100)
+            }}
+            top={
+              <div className="sprint-bar">
+                <span className={left <= 15 ? 'clock low' : 'clock'}>
+                  {mm}:{ss}
                 </span>
+                <span className="score">{score}</span>
+                <span className="lives" aria-label={`${t('დარჩენილი სიცოცხლე', 'Lives left')}: ${lives}`}>
+                  {Array.from({ length: LIVES }, (_, i) => (
+                    <span key={i} className={i < lives ? 'life' : 'life lost'}>
+                      ♥
+                    </span>
+                  ))}
+                </span>
+              </div>
+            }
+          />
+        </div>
+      </div>
+      <nav className="battle-side" aria-label={t('დროის გამოწვევა', 'Time challenge')}>
+        <section className="side-card">
+          <h3 className="side-title">
+            <span aria-hidden="true">🏅</span>
+            {caps(t('რეკორდები', 'Best scores'))}
+          </h3>
+          <table className="records">
+            <thead>
+              <tr>
+                <th />
+                {MINUTES.map((m) => (
+                  <th key={m} scope="col">
+                    {m} {t('წთ', 'min')}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {DIFFICULTY.map((d, level) => (
+                <tr key={d.from}>
+                  <th scope="row">{tr(d.name)}</th>
+                  {MINUTES.map((minutes) => (
+                    <td key={minutes} className={level === choice.level && minutes === choice.minutes ? 'now' : undefined}>
+                      {bests[challengeKey({ level, minutes })] ?? '–'}
+                    </td>
+                  ))}
+                </tr>
               ))}
-            </span>
-          </div>
-        }
-      />
+            </tbody>
+          </table>
+        </section>
+        <section className="side-card live-card">
+          <h3 className="side-title">
+            <span aria-hidden="true">⏱️</span>
+            {caps(t('ეს გამოწვევა', 'This run'))}
+          </h3>
+          {marks.length ? (
+            <ol className="run-marks">
+              {marks.map((ok, i) => (
+                <li key={i} className={ok ? 'ok' : 'bad'} aria-label={ok ? t('ამოხსნილი', 'Solved') : t('შეცდომა', 'Missed')}>
+                  {ok ? '✓' : '✗'}
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <p className="side-empty">{t('ჯერ არცერთი ამოცანა', 'No puzzles yet')}</p>
+          )}
+        </section>
+      </nav>
     </div>
   )
 }

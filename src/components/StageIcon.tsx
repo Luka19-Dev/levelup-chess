@@ -17,6 +17,15 @@ export function GameIcon({ name, className = 'piece-svg symbol' }: { name: strin
 }
 
 /** Skip forward: a play triangle against a bar, for the skip and next buttons. */
+/** a bold back arrow for the back buttons (the text arrow „←" draws too thin) */
+export function BackIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+      <path d="M20 12H5M11 5l-7 7 7 7" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
 export function SkipIcon() {
   return (
     <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">

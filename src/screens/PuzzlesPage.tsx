@@ -12,12 +12,12 @@ import type { Txt } from '../lib/i18n'
 export type Index = Awaited<ReturnType<typeof loadIndex>>
 type Props = { filter: Filter; set: SetId; onChange: (f: Filter) => void; go: (hash: string) => void }
 
-const SIDES: { v: Filter['side']; name: Txt }[] = [
+export const SIDES: { v: Filter['side']; name: Txt }[] = [
   { v: 'any', name: { ka: 'ორივე', en: 'Both' } },
   { v: 'w', name: { ka: 'თეთრები', en: 'White' } },
   { v: 'b', name: { ka: 'შავები', en: 'Black' } },
 ]
-const STAGES: { v: Filter['stage']; icon: string; name: Txt }[] = [
+export const STAGES: { v: Filter['stage']; icon: string; name: Txt }[] = [
   { v: 'any', icon: 'stage:mix', name: { ka: 'ყველა', en: 'All' } },
   { v: '0', icon: 'stage:opening', name: { ka: 'დებიუტი', en: 'Opening' } },
   { v: '1', icon: 'stage:middlegame', name: { ka: 'შუა თამაში', en: 'Middlegame' } },

@@ -27,3 +27,7 @@ dist-ssr
 .wrangler
 *.tsbuildinfo
 scripts/lichess-learn/stage
+# local test tools: the device preview and the scripted layout and flow checks
+devices.html
+devtest.js
+devtest-paths.json

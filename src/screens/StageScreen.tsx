@@ -4,15 +4,16 @@ import type { Stage } from '../data/learn'
 import { LessonPlay } from '../components/LessonPlay'
 import { LessonPanel } from '../components/LessonPanel'
 import type { GoalState } from '../components/LessonPanel'
-import { PuzzleRunner } from '../components/PuzzleRunner'
+import { AutoNextSwitch, PuzzleRunner } from '../components/PuzzleRunner'
 import type { Puzzle } from '../components/PuzzleRunner'
 import type { SetId } from '../pieces/sets'
 import { levelCount, solvedCount, starsOf } from '../lib/progress'
 import { bigCelebration, burst } from '../lib/celebrate'
 import { sfx } from '../lib/sound'
+import { track } from '../lib/stats'
 import { caps } from '../lib/caps'
 import puzzles from '../data/puzzles.json'
-import { StageIcon, GameIcon, SkipIcon } from '../components/StageIcon'
+import { BackIcon, StageIcon, GameIcon, SkipIcon } from '../components/StageIcon'
 import { t, tr } from '../lib/i18n'
 
 const PUZZLES = puzzles.levels as Record<string, Puzzle[]>
@@ -24,10 +25,13 @@ type Props = {
   set: SetId
   learn: Record<string, number[]>
   onResult: (stage: Stage, level: number, stars: number) => void
+  /** tactics stages: a solved puzzle moves on by itself */
+  autoNext: boolean
+  onAutoNext: (on: boolean) => void
   go: (hash: string) => void
 }
 
-export function StageScreen({ stage, level, set, learn, onResult, go }: Props) {
+export function StageScreen({ stage, level, set, learn, onResult, autoNext, onAutoNext, go }: Props) {
   const results = learn[stage.key] ?? []
   const count = levelCount(stage)
   const firstOpen = Math.max(0, Array.from({ length: count }, (_, i) => i).find((i) => !results[i]) ?? 0)
@@ -49,9 +53,9 @@ export function StageScreen({ stage, level, set, learn, onResult, go }: Props) {
     go(`learn/${stage.key}/${i + 1}`)
   }
 
-  function done(stars: number) {
+  function won(stars: number) {
+    track('lessons')
     onResult(stage, index, stars)
-    advance()
   }
 
   function advance() {
@@ -63,16 +67,25 @@ export function StageScreen({ stage, level, set, learn, onResult, go }: Props) {
     }
   }
 
+  // with the switch on, a solved puzzle moves on after a moment (also when switched on after solving)
+  const solved = !stage.levels && puzzleGoal.kind === 'success'
+  useEffect(() => {
+    if (!solved || !autoNext) return
+    const timer = setTimeout(advance, 1000)
+    return () => clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [solved, autoNext, index])
+
   const panel = (goal: GoalState) => <LessonPanel stage={stage} set={set} goal={goal} index={index} count={count} results={results} onPick={open} />
   const nextStage = STAGES[STAGES.indexOf(stage) + 1]
   const total = starsOf(stage, learn)
 
   return (
-    <div className="stage-page">
+    <div className={stage.levels ? 'stage-page' : 'stage-page tactics-page'}>
       <StageMenu current={stage} set={set} learn={learn} go={go} />
       <div className="stage-main">
         {stage.levels ? (
-          <LessonPlay key={`${stage.key}-${index}`} level={stage.levels[index]} set={set} panel={panel} onDone={done} />
+          <LessonPlay key={`${stage.key}-${index}`} level={stage.levels[index]} set={set} panel={panel} onSolved={won} onDone={advance} />
         ) : (
           <PuzzleRunner
             key={`${stage.key}-${index}`}
@@ -84,6 +97,7 @@ export function StageScreen({ stage, level, set, learn, onResult, go }: Props) {
               const slips = mistakes + hints
               const stars = slips === 0 ? 3 : slips === 1 ? 2 : 1
               burst()
+              track('puzzles')
               // saved now, but the board stays until Next, so the whole class can see the answer
               onResult(stage, index, stars)
               setPuzzleGoal({ kind: 'success', stars })
@@ -96,6 +110,7 @@ export function StageScreen({ stage, level, set, learn, onResult, go }: Props) {
                 </button>
               )
             }
+            footer={<AutoNextSwitch on={autoNext} onChange={onAutoNext} />}
           />
         )}
       </div>
@@ -124,9 +139,15 @@ export function StageScreen({ stage, level, set, learn, onResult, go }: Props) {
             <div className="modal-piece">
               <StageIcon stage={stage} set={set} />
             </div>
-            <p>
-              {t(`შენ შეაგროვე ${total} ვარსკვლავი ${count * 3}-დან.`, `You collected ${total} of ${count * 3} stars.`)}
-            </p>
+            {/* the stars collected out of all there were: a gold star like the board's, the count under it */}
+            <div className="stage-stars" role="img" aria-label={t(`${total} ვარსკვლავი ${count * 3}-დან`, `${total} of ${count * 3} stars`)}>
+              <span className="stage-star" aria-hidden="true">
+                ★
+              </span>
+              <strong aria-hidden="true">
+                {total}/{count * 3}
+              </strong>
+            </div>
             <div className="row">
               <button className="ghost-btn" onClick={() => go('learn')}>
                 {caps(t('მენიუ', 'Menu'))}
@@ -150,7 +171,8 @@ function StageMenu({ current, set, learn, go }: { current: Stage; set: SetId; le
   return (
     <nav className="stage-menu" aria-label={t('ეტაპები', 'Stages')}>
       <button className="menu-back" onClick={() => go('learn')}>
-        ← {caps(t('მენიუ', 'Menu'))}
+        <BackIcon />
+        {caps(t('მენიუ', 'Menu'))}
       </button>
       {SECTIONS.map((section) => (
         <div key={section.symbol} className={section === active ? 'menu-section open' : 'menu-section'}>

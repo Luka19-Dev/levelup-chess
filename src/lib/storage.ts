@@ -23,6 +23,8 @@ export type Saved = {
   /** a board colour id from catalog.ts */
   board: string
   sound: boolean
+  /** a solved puzzle moves on by itself (off: it waits for Next, the teacher's ask) */
+  autoNext: boolean
   /** best time-challenge score per difficulty and length, keyed like "1-5" */
   challengeBests: Record<string, number>
   /** the last difficulty and length chosen */
@@ -34,7 +36,7 @@ export type Saved = {
   theme?: 'light' | 'dark'
 }
 
-const EMPTY: Saved = { learn: {}, lessonsVersion: LESSONS_VERSION, set: DEFAULT_SET, board: DEFAULT_BOARD, sound: true, challengeBests: {}, challenge: { level: 0, minutes: 2 }, puzzles: DEFAULT_FILTER, lang: 'ka' }
+const EMPTY: Saved = { learn: {}, lessonsVersion: LESSONS_VERSION, set: DEFAULT_SET, board: DEFAULT_BOARD, sound: true, autoNext: false, challengeBests: {}, challenge: { level: 0, minutes: 2 }, puzzles: DEFAULT_FILTER, lang: 'ka' }
 
 export function load(): Saved {
   try {
@@ -49,6 +51,7 @@ export function load(): Saved {
       set: PIECE_SETS.some((p) => p.id === s.set) ? s.set : DEFAULT_SET,
       board: BOARDS.some((b) => b.id === s.board) ? s.board : DEFAULT_BOARD,
       sound: s.sound,
+      autoNext: s.autoNext === true,
       // the old single speed-round record drew from a different pool, so it is not carried over
       challengeBests: s.challengeBests ?? {},
       challenge:
