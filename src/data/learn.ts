@@ -5,6 +5,7 @@ import type { PieceType } from '../pieces/sets'
 import type { LevelDef } from '../lib/lesson'
 import type { Txt } from '../lib/i18n'
 import lichess from './lichess-learn.json'
+import extras from './extra-levels.json'
 import { STAGE_TEXT } from './learnText'
 
 export type Stage = {
@@ -17,6 +18,10 @@ export type Stage = {
   /** lesson boards, or the key of a puzzle set in puzzles.json */
   levels?: LevelDef[]
   puzzles?: string
+  /** a piece stage's set of extra star levels (our own, from scripts/extra-levels.mts) */
+  extra?: Stage
+  /** on an extra set: the piece stage it belongs to */
+  parent?: Stage
 }
 export type Section = { title: Txt; symbol: string; stages: Stage[] }
 
@@ -68,4 +73,14 @@ export const SECTIONS: Section[] = [
 ]
 
 export const STAGES: Stage[] = SECTIONS.flatMap((s) => s.stages)
-export const stageByKey = (key: string) => STAGES.find((s) => s.key === key)
+
+/** The extra star levels, one set per piece stage. They sit outside STAGES, so they never
+    count towards a stage's stars, the overall progress or which stage is next. */
+export const EXTRAS: Stage[] = Object.entries(extras as Record<string, LevelDef[]>).map(([key, levels]) => {
+  const parent = STAGES.find((s) => s.key === key)!
+  const extra: Stage = { ...parent, key: `${key}Extra`, subtitle: { ka: 'დამატებითი ამოცანები', en: 'Extra puzzles' }, levels, parent }
+  parent.extra = extra
+  return extra
+})
+
+export const stageByKey = (key: string) => STAGES.find((s) => s.key === key) ?? EXTRAS.find((s) => s.key === key)

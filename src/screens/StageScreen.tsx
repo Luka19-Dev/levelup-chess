@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { SECTIONS, STAGES } from '../data/learn'
+import { EXTRAS, SECTIONS, STAGES } from '../data/learn'
 import type { Stage } from '../data/learn'
 import { LessonPlay } from '../components/LessonPlay'
 import { LessonPanel } from '../components/LessonPanel'
@@ -40,7 +40,7 @@ export function StageScreen({ stage, level, set, learn, onResult, autoNext, onAu
   // clamped both ways: a hand-typed link like #learn/rook/0 must not open level -1
   const index = Math.max(0, Math.min(level ?? resumeAt, count - 1))
   // the intro card shows when a stage is opened at its start, as on lichess
-  const [intro, setIntro] = useState(level === undefined && !results.some(Boolean))
+  const [intro, setIntro] = useState(level === undefined && !results.some(Boolean) && !stage.parent)
   const [finished, setFinished] = useState(false)
   const [puzzleGoal, setPuzzleGoal] = useState<GoalState>({ kind: 'goal', text: stage.intro })
   // any change of level (tabs, menu, browser back) clears the last puzzle's result
@@ -76,8 +76,9 @@ export function StageScreen({ stage, level, set, learn, onResult, autoNext, onAu
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [solved, autoNext, index])
 
-  const panel = (goal: GoalState) => <LessonPanel stage={stage} set={set} goal={goal} index={index} count={count} results={results} onPick={open} />
-  const nextStage = STAGES[STAGES.indexOf(stage) + 1]
+  const panel = (goal: GoalState) => <LessonPanel stage={stage} set={set} goal={goal} index={index} count={count} results={results} onPick={open} go={go} />
+  // an extra set leads on to the next piece's extra set
+  const nextStage = stage.parent ? EXTRAS[EXTRAS.indexOf(stage) + 1] : STAGES[STAGES.indexOf(stage) + 1]
   const total = starsOf(stage, learn)
 
   return (
@@ -167,7 +168,9 @@ export function StageScreen({ stage, level, set, learn, onResult, autoNext, onAu
 
 /** The lesson list on the left: sections, with the current one opened up. */
 function StageMenu({ current, set, learn, go }: { current: Stage; set: SetId; learn: Record<string, number[]>; go: (h: string) => void }) {
-  const active = SECTIONS.find((s) => s.stages.includes(current))
+  // an extra set shows as its piece stage
+  const shown = current.parent ?? current
+  const active = SECTIONS.find((s) => s.stages.includes(shown))
   return (
     <nav className="stage-menu" aria-label={t('ეტაპები', 'Stages')}>
       <button className="menu-back" onClick={() => go('learn')}>
@@ -183,7 +186,7 @@ function StageMenu({ current, set, learn, go }: { current: Stage; set: SetId; le
           {section === active &&
             section.stages.map((s) => {
               const solved = solvedCount(s, learn)
-              const state = s === current ? 'now' : solved >= levelCount(s) ? 'done' : solved ? 'ongoing' : 'future'
+              const state = s === shown ? 'now' : solved >= levelCount(s) ? 'done' : solved ? 'ongoing' : 'future'
               return (
                 <button key={s.key} className={`menu-stage ${state}`} onClick={() => go(`learn/${s.key}`)}>
                   <span className="menu-icon">

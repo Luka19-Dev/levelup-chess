@@ -849,6 +849,13 @@ main {
     border: 1px solid var(--line);
     border-radius: 8px;
     padding: 18px;
+    /* never taller than the board: a taller panel would stretch the grid row and the board with it */
+    max-height: var(--board);
+    overflow-y: auto;
+  }
+  /* when it is full it scrolls; its parts keep their own height instead of being squeezed */
+  .panel > * {
+    flex-shrink: 0;
   }
   
   .panel .message {
@@ -1089,6 +1096,43 @@ main {
 .tab.now {
   background: var(--accent);
   color: var(--accent-ink);
+}
+/* a piece stage's lessons and its extra levels: two halves, the open one filled */
+.set-switch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  width: 100%;
+  margin-bottom: 12px;
+}
+.set-switch button {
+  border: 0;
+  background: none;
+  padding: 8px 6px;
+  color: var(--link);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 0;
+}
+.set-switch button + button {
+  border-left: 1px solid var(--line);
+}
+.set-switch button.now {
+  background: var(--bg-2);
+  color: var(--ink);
+}
+.set-count {
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+.tabs.many .tab {
+  padding: 4px 0;
 }
 .tab-stars {
   font-size: 0.65rem;

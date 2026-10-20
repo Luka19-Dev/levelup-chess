@@ -11,8 +11,11 @@ export type GoalState = { kind: 'goal'; text: Txt } | { kind: 'success'; stars: 
 export const PRAISE = [{ ka: '', en: '' }, { ka: 'გამოვიდა!', en: 'Done!' }, { ka: 'კარგია!', en: 'Good!' }, { ka: 'შესანიშნავია!', en: 'Excellent!' }]
 
 /** The top of a lesson's side panel: the stage header, the current goal and the level tabs. */
-export function LessonPanel(props: { stage: Stage; set: SetId; goal: GoalState; index: number; count: number; results: number[]; onPick: (i: number) => void }) {
-  const { stage, set, goal, index, count, results, onPick } = props
+export function LessonPanel(props: { stage: Stage; set: SetId; goal: GoalState; index: number; count: number; results: number[]; onPick: (i: number) => void; go?: (hash: string) => void }) {
+  const { stage, set, goal, index, count, results, onPick, go } = props
+  // a piece stage and its extra set: a switch between the two above the level tabs
+  const main = stage.parent ?? stage
+  const sets = main.extra && go ? [main, main.extra] : []
   return (
     <>
       <div className="panel-head">
@@ -40,8 +43,18 @@ export function LessonPanel(props: { stage: Stage; set: SetId; goal: GoalState; 
           tr(goal.text)
         )}
       </div>
+      {sets.length > 0 && (
+        <div className="set-switch" role="group">
+          {sets.map((s, i) => (
+            <button key={s.key} className={s === stage ? 'now' : ''} aria-pressed={s === stage} onClick={() => s !== stage && go!(`learn/${s.key}`)}>
+              {caps(i ? t('დამატებითი', 'Extra') : t('გაკვეთილები', 'Lessons'))}
+              <span className="set-count">{s.levels!.length}</span>
+            </button>
+          ))}
+        </div>
+      )}
       {/* at most 10 a row: a 20-puzzle stage gets two rows */}
-      <div className="tabs" role="tablist" style={{ gridTemplateColumns: `repeat(${Math.min(count, 10)}, 1fr)` }}>
+      <div className={count > 20 ? 'tabs many' : 'tabs'} role="tablist" style={{ gridTemplateColumns: `repeat(${Math.min(count, 10)}, 1fr)` }}>
         {Array.from({ length: count }, (_, i) => {
           const got = results[i] ?? 0
           return (

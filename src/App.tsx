@@ -393,6 +393,9 @@ function Credits() {
     <div className="credits">
       <ul>
         <li>
+          {t('შექმნილია ჭადრაკის მწვრთნელ დავით სადაღაშვილთან ერთად.', 'Made together with chess coach Davit Sadaghashvili.')}
+        </li>
+        <li>
           {t('გაკვეთილები: ', 'Lessons: ')}
           <a href="https://lichess.org/learn">lichess.org</a>
           {t('-ის სასწავლო ეტაპები (AGPL), ჩვენი ტექსტებით.', ' learn stages (AGPL), with our own texts.')}
