@@ -382,6 +382,7 @@ function Home({ saved }: { saved: Saved }) {
           <a href="https://lvlup.ge" target="_blank" rel="noopener">LevelUp Georgia</a>
           {t('-ს სოციალური პროექტი. უფასოა.', '.')}
         </p>
+        <p>{t('შექმნილია ჭადრაკის მწვრთნელ დავით სადაღაშვილთან ერთად.', 'Made together with chess coach Davit Sadaghashvili.')}</p>
       </footer>
     </div>
   )
