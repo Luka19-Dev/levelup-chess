@@ -23,6 +23,13 @@ The Georgian piece set is original to this project.
   unmodified, saved under the names of the moments they play for. Lichess's "Standard", "Pentatonic" and other
   non-free sounds are not used.
 
+## Chess engine (bots)
+- `public/engine/stockfish.js` + `stockfish.wasm`: **Stockfish 10**, **GPLv3** (`public/engine/COPYING.txt`), compiled to
+  WebAssembly by the Stockfish.js project, unmodified from the npm package `stockfish@10.0.2`. Corresponding source:
+  the npm tarball https://registry.npmjs.org/stockfish/-/stockfish-10.0.2.tgz with the stockfish.js repo https://github.com/nmrugg/stockfish.js (10.0.2 has no git tag; v10.0.1 is the nearest) and
+  https://github.com/official-stockfish/Stockfish/tree/sf_10. It runs as a separate web worker speaking UCI; GPLv3 and
+  AGPLv3 may be combined (AGPLv3 section 13). Credited on the sources page.
+
 ## Lesson symbols
 - `src/pieces/symbols.ts`: icons from [game-icons.net](https://game-icons.net) under **CC BY 3.0**, the same
   ones lichess's learn page shows. Lesson icons by Lorc, except "guards" (out of check) by Delapouite.

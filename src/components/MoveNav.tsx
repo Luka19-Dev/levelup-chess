@@ -70,7 +70,7 @@ export function useMoveHistory<T>(first: T, keys: boolean) {
 }
 
 /** chess.com's four buttons under the moves: the start, back, forward, the live position. */
-function MoveNav({ at, end, goTo }: { at: number; end: number; goTo: (i: number) => void }) {
+export function MoveNav({ at, end, goTo }: { at: number; end: number; goTo: (i: number) => void }) {
   const buttons = [
     { to: 0, off: at === 0, label: t('საწყისი პოზიცია', 'Start position'), d: 'M7 6v12M18 6l-7 6 7 6' },
     { to: at - 1, off: at === 0, label: t('წინა სვლა', 'Previous move'), d: 'M15 6l-7 6 7 6' },

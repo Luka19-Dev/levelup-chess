@@ -18,8 +18,11 @@ import type { Challenge } from './lib/challenge'
 import { PuzzlesPage } from './screens/PuzzlesPage'
 import { PuzzlePlay } from './screens/PuzzlePlay'
 import { Battle } from './screens/Battle'
+import { Editor, PlayFrom } from './screens/Editor'
+import { BotGame, BotPicker } from './screens/Bots'
 import { fromQuery, toQuery } from './lib/bank'
 import { caps } from './lib/caps'
+import { leaveGuard, setLeaveGuard } from './lib/leave'
 import { setLang, t, tr } from './lib/i18n'
 
 type Route =
@@ -31,6 +34,10 @@ type Route =
   | { name: 'credits' }
   | { name: 'puzzles'; query: string }
   | { name: 'puzzlePlay'; query: string }
+  | { name: 'editor'; query: string }
+  | { name: 'editorPlay'; query: string }
+  | { name: 'bots' }
+  | { name: 'botPlay'; query: string }
 
 function readRoute(hash: string): Route {
   const h = hash.replace(/^#\/?/, '')
@@ -38,6 +45,11 @@ function readRoute(hash: string): Route {
   if (h === 'battle') return { name: 'battle' }
   if (h === 'learn') return { name: 'learn' }
   if (h === 'credits') return { name: 'credits' }
+  if (h === 'bots') return { name: 'bots' }
+  const bp = h.match(/^bots\/play\?(.*)$/)
+  if (bp) return { name: 'botPlay', query: bp[1] }
+  const ed = h.match(/^editor(\/play)?(?:\?(.*))?$/)
+  if (ed) return { name: ed[1] ? 'editorPlay' : 'editor', query: ed[2] ?? '' }
   const pz = h.match(/^puzzles(\/play)?(?:\?(.*))?$/)
   if (pz) return { name: pz[1] ? 'puzzlePlay' : 'puzzles', query: pz[2] ?? '' }
   const m = h.match(/^learn\/(\w+)(?:\/(\d+))?$/)
@@ -48,6 +60,16 @@ function readRoute(hash: string): Route {
 
 const go = (hash: string) => {
   location.hash = hash
+}
+
+/** Our own buttons that leave the page: a page that asks first (a bot game under way) is asked before anything moves. */
+const leave = (hash: string) => {
+  const guard = leaveGuard()
+  if (!guard) return go(hash)
+  guard.ask(() => {
+    setLeaveGuard(null)
+    go(hash)
+  })
 }
 
 export default function App() {
@@ -66,6 +88,30 @@ export default function App() {
   const toTop = useRef(false)
   useEffect(() => {
     const on = () => {
+      // a page that asks before it is left (a bot game under way): stay, and let it ask
+      const guard = leaveGuard()
+      if (guard && location.hash !== guard.hash) {
+        // the browser's back button: step forward onto the game again, so the history keeps its order,
+        // then ask; leaving goes back the same step. A link typed into the address bar has no step
+        // forward to take: the game's address is put back instead, and leaving goes to the link.
+        const to = location.hash
+        let stepped = false
+        const onReturn = () => {
+          stepped = location.hash === guard.hash
+        }
+        window.addEventListener('hashchange', onReturn, { once: true })
+        history.go(1)
+        setTimeout(() => {
+          window.removeEventListener('hashchange', onReturn)
+          if (!stepped) history.replaceState(null, '', guard.hash)
+          guard.ask(() => {
+            setLeaveGuard(null)
+            if (stepped) history.back()
+            else location.hash = to
+          })
+        }, 150)
+        return
+      }
       toTop.current = true
       setHash(location.hash)
     }
@@ -89,6 +135,9 @@ export default function App() {
     document.documentElement.style.setProperty('--sq-dark', board.dark)
   }, [saved])
 
+  // the editor keeps its position in the link; replaced, so each change does not add a step to the back history
+  const editorQuery = useCallback((q: string) => history.replaceState(null, '', `#editor?${q}`), [])
+
   const update = (patch: Partial<Saved>) => setSaved((s) => ({ ...s, ...patch }))
 
   const recordLevel = (stage: Stage, level: number, stars: number) =>
@@ -107,10 +156,20 @@ export default function App() {
   }, [])
 
   // back goes one level up: a lesson to the learn overview, a puzzle run to its filters, everything else home
-  const back = route.name === 'stage' ? 'learn' : route.name === 'puzzlePlay' ? `puzzles?${route.query}` : ''
+  const back =
+    route.name === 'stage' ? 'learn' : route.name === 'puzzlePlay' ? `puzzles?${route.query}` : route.name === 'editorPlay' ? `editor?${route.query}` : route.name === 'botPlay' ? 'bots' : ''
   // a page with a board: on a phone its header keeps to one line (the language button moves to the settings)
-  const onBoard = route.name === 'stage' || route.name === 'puzzlePlay' || route.name === 'sprint' || route.name === 'battle'
-  const backLabel = back === 'learn' ? t('სწავლა', 'Learn') : back ? t('ამოცანები', 'Puzzles') : t('მთავარი', 'Home')
+  const onBoard = route.name === 'stage' || route.name === 'puzzlePlay' || route.name === 'sprint' || route.name === 'battle' || route.name === 'editor' || route.name === 'editorPlay' || route.name === 'botPlay'
+  const backLabel =
+    back === 'learn'
+      ? t('სწავლა', 'Learn')
+      : back.startsWith('editor')
+        ? t('რედაქტორი', 'Editor')
+        : back === 'bots'
+          ? t('ბოტები', 'Bots')
+        : back
+          ? t('ამოცანები', 'Puzzles')
+          : t('მთავარი', 'Home')
   const title =
     route.name === 'learn'
       ? t('სწავლა', 'Learn')
@@ -124,7 +183,11 @@ export default function App() {
             ? t('წყაროები', 'Sources')
             : route.name === 'puzzles' || route.name === 'puzzlePlay'
               ? t('ამოცანები', 'Puzzles')
-              : ''
+              : route.name === 'editor' || route.name === 'editorPlay'
+                ? t('დაფის რედაქტორი', 'Board editor')
+                : route.name === 'bots' || route.name === 'botPlay'
+                  ? t('ბოტები', 'Bots')
+                  : ''
 
   return (
     <>
@@ -135,7 +198,7 @@ export default function App() {
             <span className="brand">{caps(t('ჭადრაკი', 'Chess'))}</span>
           ) : (
             // on a phone only the arrow shows; the label stays for screen readers
-            <button className="back" onClick={() => go(back)} aria-label={backLabel} title={backLabel}>
+            <button className="back" onClick={() => leave(back)} aria-label={backLabel} title={backLabel}>
               <BackIcon />
               <span className="back-label">{caps(backLabel)}</span>
             </button>
@@ -189,6 +252,10 @@ export default function App() {
           )}
           {route.name === 'battle' && <Battle set={saved.set} />}
           {route.name === 'credits' && <Credits />}
+          {route.name === 'editor' && <Editor key={route.query} query={route.query} set={saved.set} onChange={editorQuery} go={go} />}
+          {route.name === 'bots' && <BotPicker set={saved.set} go={go} />}
+          {route.name === 'botPlay' && <BotGame key={route.query} query={route.query} set={saved.set} go={go} />}
+          {route.name === 'editorPlay' && <PlayFrom key={route.query} query={route.query} set={saved.set} go={go} />}
           {route.name === 'puzzles' && (
             <PuzzlesPage
               filter={fromQuery(route.query, saved.puzzles)}
@@ -262,7 +329,7 @@ export default function App() {
                 className="link-btn"
                 onClick={() => {
                   setSettings(false)
-                  go('credits')
+                  leave('credits')
                 }}
               >
                 {caps(t('წყაროები და ლიცენზიები', 'Sources and licences'))}
@@ -375,6 +442,22 @@ function Home({ saved }: { saved: Saved }) {
             <small>{caps(t('რიგრიგობით, ერთ ეკრანზე, 30 მოთამაშემდე.', 'Take turns on one screen, up to 30 players.'))}</small>
           </span>
         </button>
+        <button className="tile learn-tile" onClick={() => go('bots')}>
+          <span className="tile-icon sprint-icon">🤖</span>
+          <span>
+            <strong>{caps(t('ბოტები', 'Bots'))}</strong>
+            <small>{caps(t('8 დონე, დამწყებიდან ოსტატამდე.', '8 levels, from beginner to master.'))}</small>
+          </span>
+        </button>
+        <button className="tile learn-tile editor-tile" onClick={() => go('editor')}>
+          <span className="tile-icon">
+            <EditorIcon />
+          </span>
+          <span>
+            <strong>{caps(t('დაფის რედაქტორი', 'Board editor'))}</strong>
+            <small>{caps(t('დააწყვე ნებისმიერი პოზიცია და ითამაშე მისგან.', 'Set up any position and play it from there.'))}</small>
+          </span>
+        </button>
       </section>
       <footer className="foot">
         <p>
@@ -385,6 +468,25 @@ function Home({ saved }: { saved: Saved }) {
         <p>{t('შექმნილია ჭადრაკის მწვრთნელ დავით სადაღაშვილთან ერთად.', 'Made together with chess coach Davit Sadaghashvili.')}</p>
       </footer>
     </div>
+  )
+}
+
+/** A corner of a board in the chosen colours with a pencil across it: the board editor. */
+function EditorIcon() {
+  return (
+    <svg viewBox="0 0 52 52" width="52" height="52" aria-hidden="true">
+      {[0, 1, 2, 3].map((r) =>
+        [0, 1, 2, 3].map((c) => (
+          <rect key={`${r}${c}`} x={4 + c * 11} y={4 + r * 11} width="11" height="11" fill={(r + c) % 2 ? 'var(--sq-dark)' : 'var(--sq-light)'} />
+        )),
+      )}
+      <rect x="4" y="4" width="44" height="44" rx="2" fill="none" stroke="var(--line)" strokeWidth="1.5" />
+      <g transform="rotate(45 34 34)">
+        <rect x="29.5" y="12" width="9" height="26" rx="1.5" fill="var(--gold)" stroke="var(--ink)" strokeWidth="2" />
+        <path d="M29.5 38h9L34 47z" fill="#f3d9a4" stroke="var(--ink)" strokeWidth="2" strokeLinejoin="round" />
+        <path d="M32.3 43.6 34 47l1.7-3.4z" fill="var(--ink)" />
+      </g>
+    </svg>
   )
 }
 
@@ -412,6 +514,12 @@ function Credits() {
         <li>
           {t('საიტის კოდი ღიაა (AGPL): ', 'The site is open source (AGPL): ')}
           <a href="https://github.com/Luka19-Dev/levelup-chess">github.com/Luka19-Dev/levelup-chess</a>
+        </li>
+        <li>
+          {t('ბოტები: ', 'Bots: ')}
+          <a href="https://stockfishchess.org">Stockfish</a> 10
+          {t(' (GPLv3), ბრაუზერისთვის ააწყო ', ' (GPLv3), built for the browser by ')}
+          <a href="https://github.com/nmrugg/stockfish.js">Stockfish.js</a>.
         </li>
         <li>
           {t('სიმბოლოები: ', 'Symbols: ')}

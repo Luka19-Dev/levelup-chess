@@ -2430,3 +2430,503 @@ main {
     font-size: 0.8rem;
   }
 }
+
+/* ---------- board editor (#editor) ---------- */
+/* pieces from the palette: white on top, black under it, each row led by its tool (drag, remove) */
+.palette {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+.tool {
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  padding: 2px;
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--ink);
+  cursor: pointer;
+  /* a palette piece is dragged onto the board, so touching it never scrolls the page */
+  touch-action: none;
+}
+.tool .piece-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
+}
+/* a chosen tool gets a blue outline, never a fill, as in the puzzle filters; the extra ring is drawn
+   OUTSIDE the button, so nothing inside it moves or changes size when a piece is picked */
+.tool.on {
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+/* in the dark theme the pieces stand on a light square filling the whole button, so black stays readable */
+:root[data-theme='dark'] .palette .piece-tool {
+  background: var(--sq-light);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .palette .piece-tool {
+    background: var(--sq-light);
+  }
+}
+.palette-ghost {
+  position: fixed;
+  z-index: 60;
+  width: 56px;
+  height: 56px;
+  transform: translate(-50%, -50%) scale(1.12);
+  pointer-events: none;
+  filter: drop-shadow(0 6px 6px rgba(0, 0, 0, 0.3));
+}
+.palette-ghost .piece-svg {
+  width: 100%;
+  height: 100%;
+}
+.editor.tool-piece .board.live,
+.editor.tool-erase .board.live {
+  cursor: crosshair;
+}
+.editor.tool-move .board.live {
+  cursor: grab;
+}
+.ed-tip {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.ed-field {
+  display: grid;
+  gap: 6px;
+}
+.ed-field .label {
+  margin: 0;
+}
+.editor-panel .chip {
+  background: var(--card);
+}
+.editor-panel .chip.on {
+  background: var(--card);
+  color: var(--accent);
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+/* the kings stand on a light square in the dark theme, as in the puzzle filters */
+:root[data-theme='dark'] .editor-panel .chip-pieces {
+  background: var(--sq-light);
+  border-radius: 6px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .editor-panel .chip-pieces {
+    background: var(--sq-light);
+    border-radius: 6px;
+  }
+}
+.castling {
+  display: grid;
+  gap: 6px;
+}
+.castling .chips {
+  align-items: center;
+}
+.castle-king .piece-svg {
+  width: 30px;
+  height: 30px;
+}
+.ed-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.ed-buttons .wide {
+  grid-column: 1 / -1;
+}
+.ed-buttons button {
+  display: flex;
+  justify-content: center;
+  padding: 7px 12px;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+.fen-input {
+  width: 100%;
+  box-sizing: border-box;
+  font: 0.8rem/1.4 ui-monospace, Consolas, monospace;
+  padding: 7px 10px;
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--ink);
+}
+.fen-input.bad {
+  border-color: var(--bad);
+}
+.fen-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+/* a small text button on the FEN row: copies the link with the position in it */
+.copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 4px;
+  border: 0;
+  background: none;
+  color: var(--link);
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.copy-btn svg {
+  width: 17px;
+  height: 17px;
+}
+.ed-problem {
+  margin: 0;
+  color: var(--bad);
+  font-weight: 600;
+}
+.play-from {
+  padding: 11px 18px;
+  font-size: 1rem;
+}
+/* the moves played from the position, numbered in pairs like lichess */
+.move-list {
+  display: grid;
+  align-content: start;
+  min-height: 3rem;
+  max-height: 14rem;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 6px;
+  font-variant-numeric: tabular-nums;
+}
+.mv-row {
+  display: grid;
+  grid-template-columns: 2.6rem 1fr 1fr;
+}
+.mv-n {
+  color: var(--muted);
+  padding: 4px 6px;
+}
+.mv {
+  text-align: left;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--ink);
+  font-weight: 600;
+}
+button.mv {
+  cursor: pointer;
+}
+button.mv:hover {
+  background: var(--bg-2);
+}
+.mv.on,
+.mv.on:hover {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.mv.empty {
+  color: var(--muted);
+  font-weight: 400;
+}
+/* on a phone the panel's parts stack under the board, each as wide as the board */
+@media (max-width: 899px) and (orientation: portrait), (max-width: 899px) and (min-height: 521px) {
+  .editor .panel > *,
+  .editor-play .panel > * {
+    width: min(100%, 64vh, 560px);
+    box-sizing: border-box;
+  }
+  .editor .ed-tip {
+    text-align: center;
+  }
+}
+/* on a wide screen the play button and the move buttons sit at the bottom of the panel */
+@media (min-width: 900px), (orientation: landscape) and (max-height: 520px) {
+  .editor-panel {
+    gap: 12px;
+  }
+  /* the play button keeps to the bottom of the panel, in sight even while a short panel scrolls */
+  .editor-panel .play-from {
+    margin-top: auto;
+    position: sticky;
+    bottom: 0;
+    box-shadow:
+      0 4px 0 var(--accent-deep),
+      0 0 0 12px var(--card);
+  }
+  .editor-play .move-list {
+    flex: 1 1 auto;
+    max-height: none;
+    min-height: 6rem;
+    flex-shrink: 1;
+  }
+}
+
+/* ---------- bots (#bots) ---------- */
+.bots-page {
+  display: grid;
+  gap: 16px;
+}
+.bot-avatar {
+  flex: none;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--sq-light);
+  border: 3px solid var(--line);
+}
+/* the two masters wear gold */
+.bot-avatar.master {
+  border-color: var(--gold);
+}
+/* the level's number inside the badge */
+.bot-avatar {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #262421;
+  font-variant-numeric: tabular-nums;
+}
+/* lichess-style row of the eight levels: number on top, rough rating under it */
+.bot-levels {
+  display: grid;
+  gap: 8px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px;
+}
+.bot-levels .label {
+  margin: 0;
+}
+.level-row {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 8px;
+}
+.level-btn {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: 10px 4px;
+  background: var(--card);
+  color: var(--ink);
+  border: 2px solid var(--line);
+  border-radius: 10px;
+  cursor: pointer;
+}
+.level-btn strong {
+  font-size: 1.5rem;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+/* the chosen level: a blue outline drawn outside, so nothing inside moves */
+.level-btn.on {
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+@media (max-width: 599px) {
+  .level-row {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+.bot-text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.bot-text strong {
+  font-size: 1.05rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.bot-rating {
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.bot-text small {
+  color: var(--muted);
+  line-height: 1.35;
+}
+/* side and start: pinned to the bottom of the screen, so the button is always in reach */
+.bot-start {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  display: flex;
+  justify-content: center;
+  padding: 10px 0 calc(14px + env(safe-area-inset-bottom));
+  background: linear-gradient(transparent, var(--bg) 40%);
+}
+.bot-levels .chip {
+  background: var(--card);
+}
+.bot-levels .chip.on {
+  background: var(--card);
+  color: var(--accent);
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.bot-start .play-from {
+  min-width: min(100%, 320px);
+}
+@media (max-width: 599px) {
+  .bot-start .play-from {
+    width: 100%;
+  }
+}
+.half-king {
+  display: inline-flex;
+}
+.half-king .piece-svg {
+  width: 22px !important;
+}
+:root[data-theme='dark'] .bot-levels .chip-pieces {
+  background: var(--sq-light);
+  border-radius: 6px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .bot-levels .chip-pieces {
+    background: var(--sq-light);
+    border-radius: 6px;
+  }
+}
+.bot-resume {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--card);
+  border: 2px solid var(--gold);
+  border-radius: 14px;
+  font-weight: 600;
+}
+.bot-resume .primary-btn {
+  margin-left: auto;
+}
+/* the game page: the bot sits at the top of the panel */
+.bot-head {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.message.thinking {
+  color: var(--muted);
+}
+.ed-buttons .ed-tip.wide {
+  grid-column: 1 / -1;
+  text-align: center;
+  font-weight: 600;
+  color: var(--ink);
+}
+@media (max-width: 899px) and (orientation: portrait), (max-width: 899px) and (min-height: 521px) {
+  .bot-play .panel > * {
+    width: min(100%, 64vh, 560px);
+    box-sizing: border-box;
+  }
+  /* on a phone the bot stands above the board, as an opponent would */
+  .bot-play .bot-head {
+    order: -1;
+  }
+}
+@media (min-width: 900px), (orientation: landscape) and (max-height: 520px) {
+  .bot-play .move-list {
+    flex: 1 1 auto;
+    max-height: none;
+    min-height: 6rem;
+    flex-shrink: 1;
+  }
+}
+
+/* stars: gold when won, grey when not yet */
+.bot-stars {
+  display: inline-flex;
+  gap: 1px;
+  font-size: 0.95rem;
+  line-height: 1;
+  color: var(--line);
+  letter-spacing: 0;
+}
+.bot-stars .won {
+  color: var(--gold);
+}
+/* the three difficulties, each with its stars and what it allows */
+.mode-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.mode-btn {
+  padding: 10px 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-align: center;
+}
+.mode-btn .bot-stars {
+  font-size: 1.3rem;
+}
+@media (max-width: 599px) {
+  .mode-row {
+    grid-template-columns: 1fr;
+  }
+  .mode-btn {
+    grid-auto-flow: column;
+    justify-content: start;
+    gap: 10px;
+  }
+}
+/* the game's difficulty, at the right of the level */
+.bot-mode {
+  margin-left: auto;
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+  text-align: right;
+}
+.bot-mode small {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+.quit-card {
+  /* never wider than a small phone's screen */
+  width: min(26rem, calc(100vw - 32px));
+  max-width: none;
+  box-sizing: border-box;
+  padding: 22px 18px;
+  text-align: center;
+}
+.quit-card h2 {
+  font-size: 1.15rem;
+  margin: 0 0 8px;
+}
+.quit-card p {
+  margin: 0 0 16px;
+  color: var(--muted);
+}
+.quit-card .row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+.quit-card .row button {
+  flex: 1 1 8rem;
+}

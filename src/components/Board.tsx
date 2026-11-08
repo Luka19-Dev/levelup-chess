@@ -38,12 +38,14 @@ type Props = {
   onSquare?: (s: Square) => void
   /** a pawn waiting on its last row: the four pieces stand on that file to pick from */
   promotion?: { to: Square; color: Color; onPick: (p: PieceType) => void; onCancel: () => void } | null
+  /** the board editor: any piece drags anywhere, or off the board to take it away (`to` null); a click goes to `onSquare` */
+  edit?: { onDrop: (from: Square, to: Square | null) => void }
 }
 
 const PROMOTE_TO = ['q', 'n', 'r', 'b'] as const
 
 export function Board(props: Props) {
-  const { position, orientation, set, movable, legalFrom, onMove, lastMove, anim, hint, check, stars = [], shakeKey = 0, shapes = [], onSquare, promotion } = props
+  const { position, orientation, set, movable, legalFrom, onMove, lastMove, anim, hint, check, stars = [], shakeKey = 0, shapes = [], onSquare, promotion, edit } = props
   const boardRef = useRef<HTMLDivElement>(null)
   const [selected, setSelected] = useState<Square | null>(null)
   const [drag, setDrag] = useState<{ from: Square; x: number; y: number; moved: boolean } | null>(null)
@@ -108,6 +110,14 @@ export function Board(props: Props) {
       return
     }
     setDrawn([])
+    if (edit) {
+      // a piece is picked up (a click without moving still counts as a click); an empty square is a click
+      if (position[s]) {
+        setDrag({ from: s, x: e.clientX, y: e.clientY, moved: false })
+        capture(e)
+      } else onSquare?.(s)
+      return
+    }
     if (!movable) {
       onSquare?.(s)
       return
@@ -152,6 +162,11 @@ export function Board(props: Props) {
     const s = fromPoint(e.clientX, e.clientY)
     const d = drag
     setDrag(null)
+    if (edit) {
+      if (!d.moved) onSquare?.(d.from)
+      else if (s !== d.from) edit.onDrop(d.from, s)
+      return
+    }
     if (d.moved && s && s !== d.from && legalFrom(d.from).includes(s)) {
       setSelected(null)
       dropped.current = { to: s }
@@ -182,7 +197,7 @@ export function Board(props: Props) {
       if (hint === s) cls.push('hint')
       if (check === s) cls.push('check')
       // a piece the player may move: touching it drags it instead of scrolling the page
-      if (movable && position[s]?.color === movable) cls.push('own')
+      if ((movable && position[s]?.color === movable) || (edit && position[s])) cls.push('own')
       squares.push(
         <div key={s} className={cls.join(' ')} style={{ left: `${col * 12.5}%`, top: `${row * 12.5}%` }}>
           {col === 0 && <span className="coord rank">{s[1]}</span>}
